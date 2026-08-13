@@ -1,4 +1,3 @@
-```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -327,7 +326,6 @@
       </a>
     </div>
 
-
     <div class="auth-card">
 
       <h1 class="auth-title">
@@ -348,7 +346,6 @@
         class="auth-global-success"
       ></div>
 
-
       <form
         id="signupForm"
         class="auth-form"
@@ -356,7 +353,6 @@
       >
 
         <!-- NAME -->
-
         <div class="form-group">
 
           <label
@@ -389,9 +385,7 @@
 
         </div>
 
-
         <!-- MOBILE -->
-
         <div class="form-group">
 
           <label
@@ -425,9 +419,7 @@
 
         </div>
 
-
         <!-- EMAIL -->
-
         <div class="form-group">
 
           <label
@@ -460,9 +452,7 @@
 
         </div>
 
-
         <!-- PASSWORD -->
-
         <div class="form-group">
 
           <label
@@ -505,9 +495,7 @@
 
         </div>
 
-
         <!-- CONFIRM PASSWORD -->
-
         <div class="form-group">
 
           <label
@@ -550,29 +538,23 @@
 
         </div>
 
-
         <!-- CREATE ACCOUNT -->
-
         <button
           type="submit"
           id="submitBtn"
           class="auth-submit-btn"
         >
           <span>CREATE ACCOUNT</span>
-
           <span>→</span>
         </button>
 
       </form>
 
-
       <div class="auth-divider">
         OR
       </div>
 
-
       <!-- GOOGLE -->
-
       <button
         type="button"
         id="googleSignInBtn"
@@ -581,7 +563,6 @@
         <span>🔵</span>
         <span>Continue with Google</span>
       </button>
-
 
       <div class="auth-footer-prompt">
         Already have an account?
@@ -595,7 +576,6 @@
 
   </div>
 
-
   <script type="module">
 
     import {
@@ -604,7 +584,6 @@
       createUserWithEmailAndPassword,
       GoogleAuthProvider,
       signInWithPopup,
-      updateProfile,
       doc,
       setDoc,
       checkPhoneExists
@@ -807,11 +786,6 @@
           clearValidation();
 
 
-          /*
-           * IMPORTANT:
-           * NAME IS TAKEN DIRECTLY FROM INPUT
-           */
-
           const name =
             fullNameInput.value.trim();
 
@@ -950,26 +924,13 @@
               userCredential.user;
 
 
-            /* ==========================================
-               CRITICAL NAME FIX
-               
-               Firebase Authentication ke andar
-               displayName bhi save hoga.
-            ========================================== */
-
-            await updateProfile(user, {
-              displayName: name
-            });
-
-
             /*
-             * Refresh local Firebase user reference
+             * updateProfile हटाया गया है।
+             * Name Firestore में directly save होगा.
              */
 
-            await user.reload();
-
             const updatedUser =
-              auth.currentUser;
+              auth.currentUser || user;
 
 
             /* ==========================================
@@ -980,7 +941,7 @@
               doc(
                 db,
                 "users",
-                user.uid
+                updatedUser.uid
               );
 
 
@@ -988,17 +949,23 @@
               userDocRef,
               {
 
-                uid: user.uid,
+                uid:
+                  updatedUser.uid,
 
-                name: name,
+                name:
+                  name,
 
-                displayName: name,
+                displayName:
+                  name,
 
-                email: email,
+                email:
+                  email,
 
-                mobile: mobile,
+                mobile:
+                  mobile,
 
-                photoURL: "",
+                photoURL:
+                  "",
 
                 createdAt:
                   new Date().toISOString(),
@@ -1049,8 +1016,6 @@
 
             /* ==========================================
                LOCAL STORAGE
-               
-               SAME NAME EVERYWHERE
             ========================================== */
 
             const userData = {
@@ -1251,26 +1216,13 @@
 
 
             /*
-             * Make sure Firebase Auth also has name.
+             * updateProfile हटाया गया है।
+             * Google account का existing displayName
+             * सीधे Firestore में save किया जाएगा.
              */
 
-            if (
-              !user.displayName ||
-              user.displayName.trim() !== googleName
-            ) {
-
-              await updateProfile(user, {
-                displayName: googleName
-              });
-
-            }
-
-
-            await user.reload();
-
-
             const finalUser =
-              auth.currentUser;
+              auth.currentUser || user;
 
 
             /* ==========================================
@@ -1487,4 +1439,3 @@
 
 </body>
 </html>
-```
