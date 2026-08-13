@@ -1,182 +1,802 @@
-<script type="module">
-  import {
-    auth,
-    db,
-    createUserWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    doc,
-    setDoc,
-    checkPhoneExists
-  } from "./firebase.js";
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
 
-  import {
-    updateProfile
-  } from "firebase/auth";
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
 
-  document.addEventListener("DOMContentLoaded", () => {
+  <title>Create RankHub Account | Exam Preparation Platform</title>
 
-    const signupForm =
-      document.getElementById("signupForm");
+  <link rel="stylesheet" href="/style.css">
 
-    const fullNameInput =
-      document.getElementById("fullNameInput");
-
-    const mobileInput =
-      document.getElementById("mobileInput");
-
-    const emailInput =
-      document.getElementById("emailInput");
-
-    const passwordInput =
-      document.getElementById("passwordInput");
-
-    const confirmPasswordInput =
-      document.getElementById("confirmPasswordInput");
-
-    const fullNameError =
-      document.getElementById("fullNameError");
-
-    const mobileError =
-      document.getElementById("mobileError");
-
-    const emailError =
-      document.getElementById("emailError");
-
-    const passwordError =
-      document.getElementById("passwordError");
-
-    const confirmPasswordError =
-      document.getElementById("confirmPasswordError");
-
-    const submitBtn =
-      document.getElementById("submitBtn");
-
-    const googleSignInBtn =
-      document.getElementById("googleSignInBtn");
-
-    const globalError =
-      document.getElementById("globalError");
-
-    const globalSuccess =
-      document.getElementById("globalSuccess");
-
-    function setupPasswordToggle(inputId, buttonId) {
-      const input =
-        document.getElementById(inputId);
-
-      const button =
-        document.getElementById(buttonId);
-
-      if (!input || !button) return;
-
-      button.addEventListener("click", () => {
-        const show =
-          input.type === "password";
-
-        input.type =
-          show ? "text" : "password";
-
-        button.setAttribute(
-          "aria-label",
-          show ? "Hide Password" : "Show Password"
-        );
-      });
+  <style>
+    :root {
+      --primary: #DC2626;
+      --primary-hover: #B91C1C;
+      --bg-page: #F9FAFB;
+      --card-bg: #FFFFFF;
+      --text-main: #111827;
+      --text-secondary: #6B7280;
+      --border-color: #E5E7EB;
+      --error-color: #EF4444;
+      --success-color: #10B981;
     }
 
-    setupPasswordToggle(
-      "passwordInput",
-      "passwordToggle"
-    );
+    * {
+      box-sizing: border-box;
+    }
 
-    setupPasswordToggle(
-      "confirmPasswordInput",
-      "confirmPasswordToggle"
-    );
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
 
-    if (mobileInput) {
+    .auth-container {
+      width: 100%;
+      max-width: 440px;
+      margin: 32px auto;
+      padding: 24px;
+    }
+
+    .auth-header-brand {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-logo-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .auth-logo-icon {
+      color: var(--primary);
+      width: 28px;
+      height: 28px;
+    }
+
+    .auth-logo-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+    }
+
+    .auth-logo-text .logo-accent {
+      color: var(--primary);
+    }
+
+    .auth-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .auth-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .auth-subtitle {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      margin: 0 0 28px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .form-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      font-size: 0.9375rem;
+      color: var(--text-main);
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+    }
+
+    .form-input.error {
+      border-color: var(--error-color);
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inline-error {
+      font-size: 0.775rem;
+      color: var(--error-color);
+      display: none;
+      font-weight: 500;
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      height: 48px;
+      background-color: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+      margin-top: 8px;
+    }
+
+    .auth-submit-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .auth-submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .auth-divider::before {
+      margin-right: 12px;
+    }
+
+    .auth-divider::after {
+      margin-left: 12px;
+    }
+
+    .google-signin-btn {
+      width: 100%;
+      height: 48px;
+      background: #FFFFFF;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .google-signin-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .auth-footer-prompt {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .auth-footer-prompt a {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .auth-global-error,
+    .auth-global-success {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+      display: none;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .auth-global-error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #991B1B;
+    }
+
+    .auth-global-success {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    @media (max-width: 480px) {
+      .auth-container {
+        margin: 16px auto;
+        padding: 16px;
+      }
+
+      .auth-card {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+
+  <style id="auth-guard-style">
+    body {
+      display: none !important;
+    }
+  </style>
+
+  <script type="module" src="./auth-guard.js"></script>
+</head>
+
+<body>
+
+  <div class="auth-container">
+
+    <div class="auth-header-brand">
+      <a
+        href="./index.html"
+        class="auth-logo-link"
+        aria-label="RankHub Home"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="auth-logo-icon"
+        >
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+
+        <span class="auth-logo-text">
+          <span class="logo-accent">RANK</span>HUB
+        </span>
+      </a>
+    </div>
+
+
+    <div class="auth-card">
+
+      <h1 class="auth-title">
+        Create your RankHub account
+      </h1>
+
+      <p class="auth-subtitle">
+        Start your journey towards better exam preparation and higher scores.
+      </p>
+
+      <div
+        id="globalError"
+        class="auth-global-error"
+      ></div>
+
+      <div
+        id="globalSuccess"
+        class="auth-global-success"
+      ></div>
+
+
+      <form
+        id="signupForm"
+        class="auth-form"
+        novalidate
+      >
+
+        <!-- NAME -->
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="fullNameInput"
+          >
+            Full Name
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="text"
+              id="fullNameInput"
+              class="form-input"
+              placeholder="e.g. John Doe"
+              autocomplete="name"
+              maxlength="100"
+              required
+            />
+
+          </div>
+
+          <span
+            id="fullNameError"
+            class="inline-error"
+          >
+            Please enter your full name.
+          </span>
+
+        </div>
+
+
+        <!-- MOBILE -->
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="mobileInput"
+          >
+            Mobile Number
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="tel"
+              id="mobileInput"
+              class="form-input"
+              placeholder="e.g. 9876543210"
+              autocomplete="tel"
+              inputmode="numeric"
+              maxlength="10"
+              required
+            />
+
+          </div>
+
+          <span
+            id="mobileError"
+            class="inline-error"
+          >
+            Please enter a valid 10-digit mobile number.
+          </span>
+
+        </div>
+
+
+        <!-- EMAIL -->
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="emailInput"
+          >
+            Email Address
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="email"
+              id="emailInput"
+              class="form-input"
+              placeholder="e.g. user@example.com"
+              autocomplete="email"
+              maxlength="150"
+              required
+            />
+
+          </div>
+
+          <span
+            id="emailError"
+            class="inline-error"
+          >
+            Please enter a valid email address.
+          </span>
+
+        </div>
+
+
+        <!-- PASSWORD -->
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="passwordInput"
+          >
+            Password
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="passwordInput"
+              class="form-input"
+              placeholder="Create a password (min. 6 chars)"
+              autocomplete="new-password"
+              minlength="6"
+              maxlength="128"
+              required
+            />
+
+            <button
+              type="button"
+              id="passwordToggle"
+              class="password-toggle-btn"
+              aria-label="Show Password"
+            >
+              👁
+            </button>
+
+          </div>
+
+          <span
+            id="passwordError"
+            class="inline-error"
+          >
+            Password must be at least 6 characters long.
+          </span>
+
+        </div>
+
+
+        <!-- CONFIRM PASSWORD -->
+
+        <div class="form-group">
+
+          <label
+            class="form-label"
+            for="confirmPasswordInput"
+          >
+            Confirm Password
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="confirmPasswordInput"
+              class="form-input"
+              placeholder="Re-enter your password"
+              autocomplete="new-password"
+              minlength="6"
+              maxlength="128"
+              required
+            />
+
+            <button
+              type="button"
+              id="confirmPasswordToggle"
+              class="password-toggle-btn"
+              aria-label="Show Confirm Password"
+            >
+              👁
+            </button>
+
+          </div>
+
+          <span
+            id="confirmPasswordError"
+            class="inline-error"
+          >
+            Passwords do not match.
+          </span>
+
+        </div>
+
+
+        <!-- CREATE ACCOUNT -->
+
+        <button
+          type="submit"
+          id="submitBtn"
+          class="auth-submit-btn"
+        >
+          <span>CREATE ACCOUNT</span>
+
+          <span>→</span>
+        </button>
+
+      </form>
+
+
+      <div class="auth-divider">
+        OR
+      </div>
+
+
+      <!-- GOOGLE -->
+
+      <button
+        type="button"
+        id="googleSignInBtn"
+        class="google-signin-btn"
+      >
+        <span>🔵</span>
+        <span>Continue with Google</span>
+      </button>
+
+
+      <div class="auth-footer-prompt">
+        Already have an account?
+
+        <a href="./signin.html">
+          Sign In
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script type="module">
+
+    import {
+      auth,
+      db,
+      createUserWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      updateProfile,
+      doc,
+      setDoc,
+      checkPhoneExists
+    } from "./firebase.js";
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+      const signupForm =
+        document.getElementById("signupForm");
+
+      const fullNameInput =
+        document.getElementById("fullNameInput");
+
+      const mobileInput =
+        document.getElementById("mobileInput");
+
+      const emailInput =
+        document.getElementById("emailInput");
+
+      const passwordInput =
+        document.getElementById("passwordInput");
+
+      const confirmPasswordInput =
+        document.getElementById("confirmPasswordInput");
+
+      const fullNameError =
+        document.getElementById("fullNameError");
+
+      const mobileError =
+        document.getElementById("mobileError");
+
+      const emailError =
+        document.getElementById("emailError");
+
+      const passwordError =
+        document.getElementById("passwordError");
+
+      const confirmPasswordError =
+        document.getElementById("confirmPasswordError");
+
+      const submitBtn =
+        document.getElementById("submitBtn");
+
+      const googleSignInBtn =
+        document.getElementById("googleSignInBtn");
+
+      const globalError =
+        document.getElementById("globalError");
+
+      const globalSuccess =
+        document.getElementById("globalSuccess");
+
+
+      /* ==========================================
+         PASSWORD TOGGLE
+      ========================================== */
+
+      function setupPasswordToggle(inputId, buttonId) {
+
+        const input =
+          document.getElementById(inputId);
+
+        const button =
+          document.getElementById(buttonId);
+
+        if (!input || !button) return;
+
+        button.addEventListener("click", () => {
+
+          const show =
+            input.type === "password";
+
+          input.type =
+            show ? "text" : "password";
+
+          button.setAttribute(
+            "aria-label",
+            show ? "Hide Password" : "Show Password"
+          );
+
+        });
+
+      }
+
+
+      setupPasswordToggle(
+        "passwordInput",
+        "passwordToggle"
+      );
+
+      setupPasswordToggle(
+        "confirmPasswordInput",
+        "confirmPasswordToggle"
+      );
+
+
+      /* ==========================================
+         MOBILE INPUT
+      ========================================== */
+
       mobileInput.addEventListener("input", () => {
+
         mobileInput.value =
           mobileInput.value
             .replace(/\D/g, "")
             .slice(0, 10);
-      });
-    }
 
-    function clearMessages() {
-      if (globalError) {
+      });
+
+
+      /* ==========================================
+         HELPERS
+      ========================================== */
+
+      function clearMessages() {
+
         globalError.style.display = "none";
+        globalSuccess.style.display = "none";
+
         globalError.textContent = "";
-      }
-
-      if (globalSuccess) {
-        globalSuccess.style.display = "none";
         globalSuccess.textContent = "";
-      }
-    }
 
-    function showError(message) {
-      if (globalSuccess) {
+      }
+
+
+      function showError(message) {
+
         globalSuccess.style.display = "none";
-      }
 
-      if (globalError) {
         globalError.textContent = message;
+
         globalError.style.display = "block";
-      }
-    }
 
-    function showSuccess(message) {
-      if (globalError) {
+      }
+
+
+      function showSuccess(message) {
+
         globalError.style.display = "none";
-      }
 
-      if (globalSuccess) {
         globalSuccess.textContent = message;
+
         globalSuccess.style.display = "block";
+
       }
-    }
 
-    function clearValidation() {
-      [
-        fullNameInput,
-        mobileInput,
-        emailInput,
-        passwordInput,
-        confirmPasswordInput
-      ].forEach((input) => {
-        if (input) {
+
+      function clearValidation() {
+
+        [
+          fullNameInput,
+          mobileInput,
+          emailInput,
+          passwordInput,
+          confirmPasswordInput
+        ].forEach(input => {
+
           input.classList.remove("error");
-        }
-      });
 
-      [
-        fullNameError,
-        mobileError,
-        emailError,
-        passwordError,
-        confirmPasswordError
-      ].forEach((error) => {
-        if (error) {
+        });
+
+
+        [
+          fullNameError,
+          mobileError,
+          emailError,
+          passwordError,
+          confirmPasswordError
+        ].forEach(error => {
+
           error.style.display = "none";
-        }
-      });
-    }
 
-    function resetSignupButton() {
-      if (!submitBtn) return;
+        });
 
-      submitBtn.disabled = false;
+      }
 
-      submitBtn.innerHTML =
-        "<span>CREATE ACCOUNT</span><span>→</span>";
-    }
 
-    // ========================================================
-    // NORMAL SIGNUP
-    // ========================================================
+      function resetSignupButton() {
 
-    if (signupForm) {
+        submitBtn.disabled = false;
+
+        submitBtn.innerHTML =
+          "<span>CREATE ACCOUNT</span><span>→</span>";
+
+      }
+
+
+      /* ==========================================
+         EMAIL + MOBILE SIGNUP
+      ========================================== */
+
       signupForm.addEventListener(
         "submit",
         async (event) => {
@@ -186,107 +806,138 @@
           clearMessages();
           clearValidation();
 
+
+          /*
+           * IMPORTANT:
+           * NAME IS TAKEN DIRECTLY FROM INPUT
+           */
+
           const name =
-            fullNameInput?.value.trim() || "";
+            fullNameInput.value.trim();
 
           const mobile =
-            mobileInput?.value.trim() || "";
+            mobileInput.value.trim();
 
           const email =
-            emailInput?.value
+            emailInput.value
               .trim()
-              .toLowerCase() || "";
+              .toLowerCase();
 
           const password =
-            passwordInput?.value || "";
+            passwordInput.value;
 
           const confirmPassword =
-            confirmPasswordInput?.value || "";
+            confirmPasswordInput.value;
+
 
           let isValid = true;
 
-          if (name.length < 2) {
-            fullNameInput?.classList.add("error");
 
-            if (fullNameError) {
-              fullNameError.style.display = "block";
-            }
+          /* NAME */
+
+          if (name.length < 2) {
+
+            fullNameInput.classList.add("error");
+
+            fullNameError.style.display = "block";
 
             isValid = false;
+
           }
+
+
+          /* MOBILE */
 
           if (!/^[6-9]\d{9}$/.test(mobile)) {
-            mobileInput?.classList.add("error");
 
-            if (mobileError) {
-              mobileError.style.display = "block";
-            }
+            mobileInput.classList.add("error");
+
+            mobileError.style.display = "block";
 
             isValid = false;
+
           }
+
+
+          /* EMAIL */
 
           const emailPattern =
             /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
           if (!emailPattern.test(email)) {
-            emailInput?.classList.add("error");
 
-            if (emailError) {
-              emailError.style.display = "block";
-            }
+            emailInput.classList.add("error");
+
+            emailError.style.display = "block";
 
             isValid = false;
+
           }
+
+
+          /* PASSWORD */
 
           if (password.length < 6) {
-            passwordInput?.classList.add("error");
 
-            if (passwordError) {
-              passwordError.style.display = "block";
-            }
+            passwordInput.classList.add("error");
+
+            passwordError.style.display = "block";
 
             isValid = false;
+
           }
+
+
+          /* CONFIRM PASSWORD */
 
           if (
             confirmPassword.length < 6 ||
             confirmPassword !== password
           ) {
-            confirmPasswordInput?.classList.add("error");
 
-            if (confirmPasswordError) {
-              confirmPasswordError.style.display = "block";
-            }
+            confirmPasswordInput.classList.add("error");
+
+            confirmPasswordError.style.display = "block";
 
             isValid = false;
+
           }
 
-          if (!isValid) {
-            return;
-          }
 
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML =
-              "<span>Creating account...</span>";
-          }
+          if (!isValid) return;
+
+
+          submitBtn.disabled = true;
+
+          submitBtn.innerHTML =
+            "<span>Creating account...</span>";
+
 
           try {
 
-            // Check mobile number
+            /* CHECK MOBILE */
+
             const phoneExists =
               await checkPhoneExists(mobile);
 
+
             if (phoneExists) {
+
               showError(
                 "This mobile number is already registered. Please use another number or sign in."
               );
 
               resetSignupButton();
+
               return;
+
             }
 
-            // Create Firebase account
+
+            /* ==========================================
+               CREATE FIREBASE AUTH ACCOUNT
+            ========================================== */
+
             const userCredential =
               await createUserWithEmailAndPassword(
                 auth,
@@ -294,48 +945,58 @@
                 password
               );
 
+
             const user =
               userCredential.user;
 
-            // Update Firebase display name
+
+            /* ==========================================
+               CRITICAL NAME FIX
+               
+               Firebase Authentication ke andar
+               displayName bhi save hoga.
+            ========================================== */
+
             await updateProfile(user, {
               displayName: name
             });
+
+
+            /*
+             * Refresh local Firebase user reference
+             */
 
             await user.reload();
 
             const updatedUser =
               auth.currentUser;
 
-            if (!updatedUser) {
-              throw new Error(
-                "User session could not be established."
-              );
-            }
 
-            // ==================================================
-            // FIRESTORE USER DOCUMENT
-            // ==================================================
+            /* ==========================================
+               FIRESTORE
+            ========================================== */
 
             const userDocRef =
               doc(
                 db,
                 "users",
-                updatedUser.uid
+                user.uid
               );
+
 
             await setDoc(
               userDocRef,
               {
-                uid: updatedUser.uid,
 
-                name,
+                uid: user.uid,
+
+                name: name,
 
                 displayName: name,
 
-                email,
+                email: email,
 
-                mobile,
+                mobile: mobile,
 
                 photoURL: "",
 
@@ -357,64 +1018,92 @@
                   streak: 0,
                   studyTimeMinutes: 0
                 }
+
               },
               {
                 merge: true
               }
             );
 
-            // ==================================================
-            // ID TOKEN
-            // ==================================================
+
+            /* ==========================================
+               TOKEN
+            ========================================== */
 
             let token = "";
 
             try {
+
               token =
                 await updatedUser.getIdToken(true);
+
             } catch (tokenError) {
+
               console.warn(
                 "Could not get ID token:",
                 tokenError
               );
+
             }
 
-            // ==================================================
-            // LOCAL USER DATA
-            // ==================================================
+
+            /* ==========================================
+               LOCAL STORAGE
+               
+               SAME NAME EVERYWHERE
+            ========================================== */
 
             const userData = {
-              uid: updatedUser.uid,
 
-              name,
+              uid:
+                updatedUser.uid,
 
-              displayName: name,
+              name:
+                name,
 
-              email,
+              displayName:
+                name,
 
-              mobile,
+              email:
+                email,
 
-              photoURL: "",
+              mobile:
+                mobile,
 
-              token,
+              photoURL:
+                "",
+
+              token:
+                token,
 
               signupTime:
                 new Date().toISOString()
+
             };
+
 
             localStorage.setItem(
               "rankhub_user",
               JSON.stringify(userData)
             );
 
+
+            /* ==========================================
+               SUCCESS
+            ========================================== */
+
             showSuccess(
               `Welcome ${name}! Account created successfully.`
             );
 
+
             setTimeout(() => {
+
               window.location.href =
                 "./index.html";
+
             }, 1000);
+
 
           } catch (error) {
 
@@ -423,40 +1112,55 @@
               error
             );
 
+
             let message =
               "Unable to create your account. Please try again.";
+
 
             switch (error.code) {
 
               case "auth/email-already-in-use":
+
                 message =
                   "This email is already registered. Please sign in instead.";
+
                 break;
 
               case "auth/invalid-email":
+
                 message =
                   "Please enter a valid email address.";
+
                 break;
 
               case "auth/weak-password":
+
                 message =
                   "Password is too weak. Please use at least 6 characters.";
+
                 break;
 
               case "auth/network-request-failed":
+
                 message =
                   "Network error. Please check your internet connection.";
+
                 break;
 
               case "auth/operation-not-allowed":
+
                 message =
                   "Email/Password sign-up is not enabled in Firebase Authentication.";
+
                 break;
 
               case "permission-denied":
+
               case "firestore/permission-denied":
+
                 message =
                   "Account created, but Firestore permission was denied. Please check Firestore rules.";
+
                 break;
 
               default:
@@ -467,6 +1171,7 @@
                     .toLowerCase()
                     .includes("permission")
                 ) {
+
                   message =
                     "Firestore permission denied. Please check Firestore rules.";
 
@@ -476,24 +1181,28 @@
                     .toLowerCase()
                     .includes("network")
                 ) {
+
                   message =
                     "Network error. Please check your internet connection.";
+
                 }
+
             }
+
 
             showError(message);
 
             resetSignupButton();
+
           }
+
         }
       );
-    }
 
-    // ========================================================
-    // GOOGLE SIGNUP
-    // ========================================================
 
-    if (googleSignInBtn) {
+      /* ==========================================
+         GOOGLE SIGNUP
+      ========================================== */
 
       googleSignInBtn.addEventListener(
         "click",
@@ -507,6 +1216,7 @@
           googleSignInBtn.innerHTML =
             "<span>Connecting to Google...</span>";
 
+
           try {
 
             const provider =
@@ -516,14 +1226,21 @@
               prompt: "select_account"
             });
 
+
             const result =
               await signInWithPopup(
                 auth,
                 provider
               );
 
+
             const user =
               result.user;
+
+
+            /* ==========================================
+               GOOGLE NAME
+            ========================================== */
 
             const googleName =
               user.displayName?.trim() ||
@@ -532,30 +1249,33 @@
                 ?.trim() ||
               "User";
 
-            // Update Google user's display name
+
+            /*
+             * Make sure Firebase Auth also has name.
+             */
+
             if (
               !user.displayName ||
               user.displayName.trim() !== googleName
             ) {
+
               await updateProfile(user, {
                 displayName: googleName
               });
+
             }
 
+
             await user.reload();
+
 
             const finalUser =
               auth.currentUser;
 
-            if (!finalUser) {
-              throw new Error(
-                "Google user session could not be established."
-              );
-            }
 
-            // ==================================================
-            // FIRESTORE USER DOCUMENT
-            // ==================================================
+            /* ==========================================
+               FIRESTORE
+            ========================================== */
 
             const userDocRef =
               doc(
@@ -564,19 +1284,25 @@
                 finalUser.uid
               );
 
+
             await setDoc(
               userDocRef,
               {
-                uid: finalUser.uid,
 
-                name: googleName,
+                uid:
+                  finalUser.uid,
 
-                displayName: googleName,
+                name:
+                  googleName,
+
+                displayName:
+                  googleName,
 
                 email:
                   finalUser.email || "",
 
-                mobile: "",
+                mobile:
+                  "",
 
                 photoURL:
                   finalUser.photoURL || "",
@@ -599,66 +1325,86 @@
                   streak: 0,
                   studyTimeMinutes: 0
                 }
+
               },
               {
                 merge: true
               }
             );
 
-            // ==================================================
-            // ID TOKEN
-            // ==================================================
+
+            /* ==========================================
+               TOKEN
+            ========================================== */
 
             let token = "";
 
             try {
+
               token =
                 await finalUser.getIdToken(true);
+
             } catch (tokenError) {
+
               console.warn(
                 "Could not get ID token:",
                 tokenError
               );
+
             }
 
-            // ==================================================
-            // LOCAL USER DATA
-            // ==================================================
+
+            /* ==========================================
+               LOCAL STORAGE
+            ========================================== */
 
             const userData = {
-              uid: finalUser.uid,
 
-              name: googleName,
+              uid:
+                finalUser.uid,
 
-              displayName: googleName,
+              name:
+                googleName,
+
+              displayName:
+                googleName,
 
               email:
                 finalUser.email || "",
 
-              mobile: "",
+              mobile:
+                "",
 
               photoURL:
                 finalUser.photoURL || "",
 
-              token,
+              token:
+                token,
 
               signupTime:
                 new Date().toISOString()
+
             };
+
 
             localStorage.setItem(
               "rankhub_user",
               JSON.stringify(userData)
             );
 
+
             showSuccess(
               `Welcome ${googleName}! Redirecting...`
             );
 
+
             setTimeout(() => {
+
               window.location.href =
                 "./index.html";
+
             }, 800);
+
 
           } catch (error) {
 
@@ -667,42 +1413,59 @@
               error
             );
 
+
             let message =
               "Google sign-in failed. Please try again.";
+
 
             switch (error.code) {
 
               case "auth/popup-closed-by-user":
+
                 message =
                   "Google sign-in was cancelled.";
+
                 break;
 
               case "auth/popup-blocked":
+
                 message =
                   "Your browser blocked the Google popup. Please allow popups and try again.";
+
                 break;
 
               case "auth/account-exists-with-different-credential":
+
                 message =
                   "An account already exists with this email using another sign-in method.";
+
                 break;
 
               case "auth/network-request-failed":
+
                 message =
                   "Network error. Please check your internet connection.";
+
                 break;
 
               case "auth/unauthorized-domain":
+
                 message =
                   "This website domain is not authorized in Firebase Authentication.";
+
                 break;
 
               case "permission-denied":
+
               case "firestore/permission-denied":
+
                 message =
                   "Google login succeeded, but Firestore permission was denied.";
+
                 break;
+
             }
+
 
             showError(message);
 
@@ -712,10 +1475,16 @@
 
             googleSignInBtn.innerHTML =
               "<span>🔵</span><span>Continue with Google</span>";
+
           }
+
         }
       );
-    }
 
-  });
-</script>
+    });
+
+  </script>
+
+</body>
+</html>
+```
