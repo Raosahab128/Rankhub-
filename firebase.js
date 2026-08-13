@@ -98,6 +98,14 @@ export const db = initializeFirestore(app, {
 export const storage = getStorage(app);
 
 /* ============================================================
+   AUTHENTICATION HELPERS & UPDATE PROFILE EXPORT
+============================================================ */
+
+export async function updateProfile(user, profileData) {
+  return firebaseUpdateProfile(user, profileData);
+}
+
+/* ============================================================
    CHECK PHONE EXISTS
 ============================================================ */
 
@@ -139,8 +147,7 @@ export {
   sendPasswordResetEmail,
   updatePassword,
   GoogleAuthProvider,
-  signInWithPopup,
-  firebaseUpdateProfile as updateProfile
+  signInWithPopup
 };
 
 /* ============================================================
