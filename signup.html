@@ -1,11 +1,9 @@
 <!doctype html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Create RankHub Account | Exam Preparation Platform</title>
-  <link rel="stylesheet" href="/style.css">
-  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />  <title>Create RankHub Account | Exam Preparation Platform</title>  <link rel="stylesheet" href="/style.css">  <style>
     :root {
       --primary: #DC2626;
       --primary-hover: #B91C1C;
@@ -21,7 +19,8 @@
     body {
       background-color: var(--bg-page);
       color: var(--text-main);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       margin: 0;
       padding: 0;
       min-height: 100vh;
@@ -316,340 +315,619 @@
         margin: 16px auto;
         padding: 16px;
       }
+
       .auth-card {
         padding: 24px 20px;
       }
     }
-  </style>
+  </style>  <style id="auth-guard-style">
+    body {
+      display: none !important;
+    }
+  </style>  <script type="module" src="./auth-guard.js"></script></head><body>  <div class="auth-container"><div class="auth-header-brand">
+  <a href="./index.html" class="auth-logo-link" aria-label="RankHub Home">
 
-  <style id="auth-guard-style">body { display: none !important; }</style>
-  <script type="module" src="./auth-guard.js"></script>
-</head>
-<body>
-  <div class="auth-container">
-    <div class="auth-header-brand">
-      <a href="./index.html" class="auth-logo-link" aria-label="RankHub Home">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="auth-logo-icon">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-        </svg>
-        <span class="auth-logo-text"><span class="logo-accent">RANK</span>HUB</span>
-      </a>
-    </div>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="auth-logo-icon"
+    >
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
 
-    <div class="auth-card">
-      <h1 class="auth-title">Create your RankHub account</h1>
-      <p class="auth-subtitle">Start your journey towards better exam preparation and higher scores.</p>
+    <span class="auth-logo-text">
+      <span class="logo-accent">RANK</span>HUB
+    </span>
 
-      <div id="globalError" class="auth-global-error"></div>
-      <div id="globalSuccess" class="auth-global-success"></div>
+  </a>
+</div>
 
-      <form id="signupForm" class="auth-form" novalidate>
-        <div class="form-group">
-          <label class="form-label" for="fullNameInput">Full Name</label>
-          <div class="input-wrapper">
-            <input type="text" id="fullNameInput" class="form-input" placeholder="e.g. John Doe" autocomplete="name" required />
-          </div>
-          <span id="fullNameError" class="inline-error">Please enter your full name.</span>
-        </div>
+<div class="auth-card">
 
-        <div class="form-group">
-          <label class="form-label" for="mobileInput">Mobile Number</label>
-          <div class="input-wrapper">
-            <input type="tel" id="mobileInput" class="form-input" placeholder="e.g. 9876543210" autocomplete="tel" required />
-          </div>
-          <span id="mobileError" class="inline-error">Please enter a valid 10-digit mobile number.</span>
-        </div>
+  <h1 class="auth-title">
+    Create your RankHub account
+  </h1>
 
-        <div class="form-group">
-          <label class="form-label" for="emailInput">Email Address</label>
-          <div class="input-wrapper">
-            <input type="email" id="emailInput" class="form-input" placeholder="e.g. user@example.com" autocomplete="email" required />
-          </div>
-          <span id="emailError" class="inline-error">Please enter a valid email address.</span>
-        </div>
+  <p class="auth-subtitle">
+    Start your journey towards better exam preparation and higher scores.
+  </p>
 
-        <div class="form-group">
-          <label class="form-label" for="passwordInput">Password</label>
-          <div class="input-wrapper">
-            <input type="password" id="passwordInput" class="form-input" placeholder="Create a password (min. 6 chars)" autocomplete="new-password" required />
-            <button type="button" id="passwordToggle" class="password-toggle-btn" aria-label="Show Password">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-          <span id="passwordError" class="inline-error">Password must be at least 6 characters long.</span>
-        </div>
+  <div id="globalError" class="auth-global-error"></div>
 
-        <div class="form-group">
-          <label class="form-label" for="confirmPasswordInput">Confirm Password</label>
-          <div class="input-wrapper">
-            <input type="password" id="confirmPasswordInput" class="form-input" placeholder="Re-enter your password" autocomplete="new-password" required />
-            <button type="button" id="confirmPasswordToggle" class="password-toggle-btn" aria-label="Show Confirm Password">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-          <span id="confirmPasswordError" class="inline-error">Passwords do not match.</span>
-        </div>
+  <div id="globalSuccess" class="auth-global-success"></div>
 
-        <button type="submit" id="submitBtn" class="auth-submit-btn">
-          <span>CREATE ACCOUNT</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </form>
+  <form id="signupForm" class="auth-form" novalidate>
 
-      <div class="auth-divider">OR</div>
+    <!-- FULL NAME -->
 
-      <button type="button" id="googleSignInBtn" class="google-signin-btn">
-        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.86 2.08-1.83 2.72v2.26h2.96c1.73-1.59 2.73-3.93 2.73-6.43z" fill="#4285F4"/>
-          <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.96-2.26c-.82.55-1.87.88-3.09.88-2.33 0-4.31-1.57-5.02-3.68H.9v2.33C2.38 15.98 5.42 18 9 18z" fill="#34A853"/>
-          <path d="M3.98 9.9c-.19-.55-.3-1.14-.3-1.9s.11-1.35.3-1.9V3.77H.9C.33 4.9 0 6.18 0 7.5s.33 2.6.9 3.73l3.08-2.33z" fill="#FBBC05"/>
-          <path d="M9 3.58c1.32 0 2.51.45 3.44 1.34l2.58-2.58C13.46.89 11.43 0 9 0 5.42 0 2.38 2.02.9 5.07l3.08 2.33c.71-2.11 2.69-3.82 5.02-3.82z" fill="#EA4335"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
+    <div class="form-group">
 
-      <div class="auth-footer-prompt">
-        Already have an account? <a href="./signin.html">Sign In</a>
+      <label
+        class="form-label"
+        for="fullNameInput"
+      >
+        Full Name
+      </label>
+
+      <div class="input-wrapper">
+
+        <input
+          type="text"
+          id="fullNameInput"
+          class="form-input"
+          placeholder="e.g. John Doe"
+          autocomplete="name"
+          required
+        />
+
       </div>
+
+      <span
+        id="fullNameError"
+        class="inline-error"
+      >
+        Please enter your full name.
+      </span>
+
     </div>
+
+    <!-- MOBILE -->
+
+    <div class="form-group">
+
+      <label
+        class="form-label"
+        for="mobileInput"
+      >
+        Mobile Number
+      </label>
+
+      <div class="input-wrapper">
+
+        <input
+          type="tel"
+          id="mobileInput"
+          class="form-input"
+          placeholder="e.g. 9876543210"
+          autocomplete="tel"
+          inputmode="numeric"
+          maxlength="10"
+          required
+        />
+
+      </div>
+
+      <span
+        id="mobileError"
+        class="inline-error"
+      >
+        Please enter a valid 10-digit mobile number.
+      </span>
+
+    </div>
+
+    <!-- EMAIL -->
+
+    <div class="form-group">
+
+      <label
+        class="form-label"
+        for="emailInput"
+      >
+        Email Address
+      </label>
+
+      <div class="input-wrapper">
+
+        <input
+          type="email"
+          id="emailInput"
+          class="form-input"
+          placeholder="e.g. user@example.com"
+          autocomplete="email"
+          required
+        />
+
+      </div>
+
+      <span
+        id="emailError"
+        class="inline-error"
+      >
+        Please enter a valid email address.
+      </span>
+
+    </div>
+
+    <!-- PASSWORD -->
+
+    <div class="form-group">
+
+      <label
+        class="form-label"
+        for="passwordInput"
+      >
+        Password
+      </label>
+
+      <div class="input-wrapper">
+
+        <input
+          type="password"
+          id="passwordInput"
+          class="form-input"
+          placeholder="Create a password (min. 6 chars)"
+          autocomplete="new-password"
+          minlength="6"
+          required
+        />
+
+        <button
+          type="button"
+          id="passwordToggle"
+          class="password-toggle-btn"
+          aria-label="Show Password"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+
+      </div>
+
+      <span
+        id="passwordError"
+        class="inline-error"
+      >
+        Password must be at least 6 characters long.
+      </span>
+
+    </div>
+
+    <!-- CONFIRM PASSWORD -->
+
+    <div class="form-group">
+
+      <label
+        class="form-label"
+        for="confirmPasswordInput"
+      >
+        Confirm Password
+      </label>
+
+      <div class="input-wrapper">
+
+        <input
+          type="password"
+          id="confirmPasswordInput"
+          class="form-input"
+          placeholder="Re-enter your password"
+          autocomplete="new-password"
+          minlength="6"
+          required
+        />
+
+        <button
+          type="button"
+          id="confirmPasswordToggle"
+          class="password-toggle-btn"
+          aria-label="Show Confirm Password"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+
+      </div>
+
+      <span
+        id="confirmPasswordError"
+        class="inline-error"
+      >
+        Passwords do not match.
+      </span>
+
+    </div>
+
+    <!-- CREATE ACCOUNT -->
+
+    <button
+      type="submit"
+      id="submitBtn"
+      class="auth-submit-btn"
+    >
+
+      <span>CREATE ACCOUNT</span>
+
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+
+    </button>
+
+  </form>
+
+  <div class="auth-divider">
+    OR
   </div>
 
-  
+  <!-- GOOGLE -->
 
-  <script type="module">
-    import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, doc, setDoc, onAuthStateChanged, checkPhoneExists } from './firebase.js';
+  <button
+    type="button"
+    id="googleSignInBtn"
+    class="google-signin-btn"
+  >
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Set a placeholder to prevent infinite redirect loop with navigation.js sync guard
-        if (!localStorage.getItem('rankhub_user')) {
-          localStorage.setItem('rankhub_user', JSON.stringify({ uid: user.uid, email: user.email }));
-        }
-        window.location.href = './index.html';
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.86 2.08-1.83 2.72v2.26h2.96c1.73-1.59 2.73-3.93 2.73-6.43z"
+        fill="#4285F4"
+      />
+
+      <path
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.96-2.26c-.82.55-1.87.88-3.09.88-2.33 0-4.31-1.57-5.02-3.68H.9v2.33C2.38 15.98 5.42 18 9 18z"
+        fill="#34A853"
+      />
+
+      <path
+        d="M3.98 9.9c-.19-.55-.3-1.14-.3-1.9s.11-1.35.3-1.9V3.77H.9C.33 4.9 0 6.18 0 7.5s.33 2.6.9 3.73l3.08-2.33z"
+        fill="#FBBC05"
+      />
+
+      <path
+        d="M9 3.58c1.32 0 2.51.45 3.44 1.34l2.58-2.58C13.46.89 11.43 0 9 0 5.42 0 2.38 2.02.9 5.07l3.08 2.33c.71-2.11 2.69-3.82 5.02-3.82z"
+        fill="#EA4335"
+      />
+    </svg>
+
+    <span>
+      Continue with Google
+    </span>
+
+  </button>
+
+  <div class="auth-footer-prompt">
+
+    Already have an account?
+
+    <a href="./signin.html">
+      Sign In
+    </a>
+
+  </div>
+
+</div>
+
+  </div>  <!-- ==========================================
+       RANKHUB SIGNUP FIREBASE LOGIC
+       ========================================== -->  <script type="module">
+
+    import {
+      auth,
+      db,
+      createUserWithEmailAndPassword,
+      doc,
+      setDoc,
+      serverTimestamp
+    } from './firebase.js';
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      const signupForm =
+        document.getElementById('signupForm');
+
+      const fullNameInput =
+        document.getElementById('fullNameInput');
+
+      const mobileInput =
+        document.getElementById('mobileInput');
+
+      const emailInput =
+        document.getElementById('emailInput');
+
+      const passwordInput =
+        document.getElementById('passwordInput');
+
+      const confirmPasswordInput =
+        document.getElementById('confirmPasswordInput');
+
+
+      const fullNameError =
+        document.getElementById('fullNameError');
+
+      const mobileError =
+        document.getElementById('mobileError');
+
+      const emailError =
+        document.getElementById('emailError');
+
+      const passwordError =
+        document.getElementById('passwordError');
+
+      const confirmPasswordError =
+        document.getElementById('confirmPasswordError');
+
+
+      const submitBtn =
+        document.getElementById('submitBtn');
+
+      const globalError =
+        document.getElementById('globalError');
+
+      const globalSuccess =
+        document.getElementById('globalSuccess');
+
+
+      // ==========================================
+      // PASSWORD TOGGLE
+      // ==========================================
+
+      function setupPasswordToggle(inputId, buttonId) {
+
+        const input =
+          document.getElementById(inputId);
+
+        const button =
+          document.getElementById(buttonId);
+
+        if (!input || !button) return;
+
+        button.addEventListener('click', () => {
+
+          if (input.type === 'password') {
+
+            input.type = 'text';
+
+            button.setAttribute(
+              'aria-label',
+              'Hide Password'
+            );
+
+          } else {
+
+            input.type = 'password';
+
+            button.setAttribute(
+              'aria-label',
+              'Show Password'
+            );
+
+          }
+
+        });
+
       }
-    });
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const cyEl = document.getElementById('currentYear'); if (cyEl) cyEl.textContent = new Date().getFullYear();
 
-    // Password visibility toggle helpers
-    function setupPasswordToggle(inputId, toggleId) {
-      const input = document.getElementById(inputId);
-      const toggle = document.getElementById(toggleId);
-      toggle.addEventListener('click', () => {
-        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-        input.setAttribute('type', type);
-        toggle.innerHTML = type === 'password' 
-          ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
-          : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
-      });
-    }
+      setupPasswordToggle(
+        'passwordInput',
+        'passwordToggle'
+      );
 
-    setupPasswordToggle('passwordInput', 'passwordToggle');
-    setupPasswordToggle('confirmPasswordInput', 'confirmPasswordToggle');
+      setupPasswordToggle(
+        'confirmPasswordInput',
+        'confirmPasswordToggle'
+      );
 
-    // Form submission & validation
-    const signupForm = document.getElementById('signupForm');
-    const fullNameInput = document.getElementById('fullNameInput');
-    const mobileInput = document.getElementById('mobileInput');
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
 
-    const fullNameError = document.getElementById('fullNameError');
-    const mobileError = document.getElementById('mobileError');
-    const emailError = document.getElementById('emailError');
-    const passwordError = document.getElementById('passwordError');
-    const confirmPasswordError = document.getElementById('confirmPasswordError');
+      // ==========================================
+      // HELPERS
+      // ==========================================
 
-    const submitBtn = document.getElementById('submitBtn');
-    const globalError = document.getElementById('globalError');
-    const globalSuccess = document.getElementById('globalSuccess');
+      function hideMessages() {
 
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      let isValid = true;
-      globalError.style.display = 'none';
-      globalSuccess.style.display = 'none';
+        globalError.style.display = 'none';
+        globalSuccess.style.display = 'none';
 
-      // Full Name
-      const nameVal = fullNameInput.value.trim();
-      if (!nameVal) {
-        fullNameInput.classList.add('error');
-        fullNameError.style.display = 'block';
-        isValid = false;
-      } else {
+        globalError.textContent = '';
+        globalSuccess.textContent = '';
+
+      }
+
+
+      function showError(message) {
+
+        globalSuccess.style.display = 'none';
+
+        globalError.textContent = message;
+
+        globalError.style.display = 'block';
+
+      }
+
+
+      function showSuccess(message) {
+
+        globalError.style.display = 'none';
+
+        globalSuccess.textContent = message;
+
+        globalSuccess.style.display = 'block';
+
+      }
+
+
+      function clearValidationErrors() {
+
         fullNameInput.classList.remove('error');
-        fullNameError.style.display = 'none';
-      }
-
-      // Mobile
-      const mobileVal = mobileInput.value.trim();
-      if (!mobileVal || mobileVal.length < 10) {
-        mobileInput.classList.add('error');
-        mobileError.style.display = 'block';
-        isValid = false;
-      } else {
         mobileInput.classList.remove('error');
-        mobileError.style.display = 'none';
-      }
-
-      // Email
-      const emailVal = emailInput.value.trim();
-      if (!emailVal || !emailVal.includes('@') || !emailVal.includes('.')) {
-        emailInput.classList.add('error');
-        emailError.style.display = 'block';
-        isValid = false;
-      } else {
         emailInput.classList.remove('error');
-        emailError.style.display = 'none';
-      }
-
-      // Password
-      const passVal = passwordInput.value;
-      if (!passVal || passVal.length < 6) {
-        passwordInput.classList.add('error');
-        passwordError.style.display = 'block';
-        isValid = false;
-      } else {
         passwordInput.classList.remove('error');
-        passwordError.style.display = 'none';
-      }
-
-      // Confirm Password
-      const confirmVal = confirmPasswordInput.value;
-      if (confirmVal !== passVal) {
-        confirmPasswordInput.classList.add('error');
-        confirmPasswordError.style.display = 'block';
-        isValid = false;
-      } else {
         confirmPasswordInput.classList.remove('error');
+
+        fullNameError.style.display = 'none';
+        mobileError.style.display = 'none';
+        emailError.style.display = 'none';
+        passwordError.style.display = 'none';
         confirmPasswordError.style.display = 'none';
+
       }
 
-      if (!isValid) return;
 
-      // Loading state
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span>Creating account...</span>';
+      function resetSubmitButton() {
 
-      try {
-        // Pre-signup checks
-        if (await checkPhoneExists(mobileVal)) {
-          globalError.textContent = 'This mobile number is already registered. Please log in instead.';
-          globalError.style.display = 'block';
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<span>CREATE ACCOUNT</span><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-          return;
-        }
-
-        const userCredential = await createUserWithEmailAndPassword(auth, emailVal, passVal);
-        const user = userCredential.user;
-
-        // Initialize zero-state user document in Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        await setDoc(userDocRef, {
-          name: nameVal,
-          email: emailVal,
-          mobile: mobileVal,
-          photoURL: '',
-          createdAt: new Date().toISOString(),
-          subscription: { active: false, plan: 'Free' },
-          stats: {
-            testsAttempted: 0,
-            questionsSolved: 0,
-            correctCount: 0,
-            incorrectCount: 0,
-            totalScore: 0,
-            accuracy: 0,
-            streak: 0,
-            studyTimeMinutes: 0
-          }
-        }, { merge: true });
-
-        const userData = {
-          uid: user.uid,
-          name: nameVal,
-          email: emailVal,
-          mobile: mobileVal,
-          token: await user.getIdToken(),
-          signupTime: new Date().toISOString()
-        };
-        localStorage.setItem('rankhub_user', JSON.stringify(userData));
-
-        globalSuccess.textContent = 'Account created successfully! Redirecting...';
-        globalSuccess.style.display = 'block';
-
-        setTimeout(() => {
-          window.location.href = './index.html';
-        }, 800);
-      } catch (err) {
-        console.warn("Auth warning:", err.code);
-        if (err.code === 'auth/email-already-in-use') {
-          globalError.textContent = 'An account with this email already exists. Please log in instead.';
-        } else {
-          globalError.textContent = 'Invalid email/mobile or password.';
-        }
-        globalError.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>CREATE ACCOUNT</span><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+
+        submitBtn.innerHTML = `
+          <span>CREATE ACCOUNT</span>
+
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        `;
+
       }
-    });
 
-    // Google Sign-In
-    const googleSignInBtn = document.getElementById('googleSignInBtn');
-    googleSignInBtn.addEventListener('click', async () => {
-      try {
-        googleSignInBtn.style.opacity = '0.7';
-        googleSignInBtn.innerHTML = '<span>Connecting to Google...</span>';
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
 
-        const userDocRef = doc(db, 'users', user.uid);
-        await setDoc(userDocRef, {
-          name: user.displayName || 'Google User',
-          email: user.email,
-          mobile: '9876543210',
-          photoURL: user.photoURL || '',
-          createdAt: new Date().toISOString(),
-          subscription: { active: false, plan: 'Free' },
-          stats: {
-            testsAttempted: 0,
-            questionsSolved: 0,
-            correctCount: 0,
-            incorrectCount: 0,
-            totalScore: 0,
-            accuracy: 0,
-            streak: 0,
-            studyTimeMinutes: 0
+      // ==========================================
+      // MOBILE INPUT
+      // ==========================================
+
+      mobileInput.addEventListener('input', () => {
+
+        mobileInput.value =
+          mobileInput.value
+            .replace(/\D/g, '')
+            .slice(0, 10);
+
+      });
+
+
+      // ==========================================
+      // SIGNUP
+      // ==========================================
+
+      signupForm.addEventListener(
+        'submit',
+        async (event) => {
+
+          event.preventDefault();
+
+          hideMessages();
+          clearValidationErrors();
+
+
+          const name =
+            fullNameInput.value.trim();
+
+          const mobile =
+            mobileInput.value.trim();
+
+          const email =
+            emailInput.value.trim().toLowerCase();
+
+          const password =
+            passwordInput.value;
+
+          const confirmPassword =
+            confirmPasswordInput.value;
+
+
+          let valid = true;
+
+
+          // --------------------------------------
+          // NAME
+          // --------------------------------------
+
+          if (name.length < 2) {
+
+            fullNameInput.classList.add('error');
+
+            fullNameError.style.display = 'block';
+
+            valid = false;
+
           }
-        }, { merge: true });
 
-        const userData = {
-          uid: user.uid,
-          name: user.displayName || 'Google User',
-          email: user.email,
-          mobile: '9876543210',
-          token: await user.getIdToken(),
-          loginTime: new Date().toISOString()
-        };
-        localStorage.setItem('rankhub_user', JSON.stringify(userData));
-        globalSuccess.textContent = 'Google sign-up successful! Redirecting...';
-        globalSuccess.style.display = 'block';
-        setTimeout(() => {
-          window.location.href = './index.html';
-        }, 800);
-      } catch (err) {
-        console.warn("Auth warning:", err.code);
-        globalError.textContent = err.message || 'Google Sign-Up failed.';
-        globalError.style.display = 'block';
-        googleSignInBtn.style.opacity = '1';
-        googleSignInBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.86 2.08-1.83 2.72v2.26h2.96c1.73-1.59 2.73-3.93 2.73-6.43z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.96-2.26c-.82.55-1.87.88-3.09.88-2.33 0-4.31-1.57-5.02-3.68H.9v2.33C2.38 15.98 5.42 18 9 18z" fill="#34A853"/><path d="M3.98 9.9c-.19-.55-.3-1.14-.3-1.9s.11-1.35.3-1.9V3.77H.9C.33 4.9 0 6.18 0 7.5s.33 2.6.9 3.73l3.08-2.33z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.51.45 3.44 1.34l2.58-2.58C13.46.89 11.43 0 9 0 5.42 0 2.38 2.02.9 5.07l3.08 2.33c.71-2.11 2.69-3.82 5.02-3.82z" fill="#EA4335"/></svg><span>Continue with Google</span>';
-      }
-    });
-    });
-  </script>
-</body>
-</html>
+
+          // --------------------------------------
+          // MOBILE
+          // --------------------------------------
+
+          if (!/^[6-9]\d{9}$/.test(mobile)) {
+
+            mobileInput.classList.add('error');
+
+            mobileError.style.display = 'block';
+
+            valid = fal
