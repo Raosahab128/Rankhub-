@@ -1,7 +1,7 @@
-/*
- * RankHub Firebase Configuration
- * Firebase Authentication, Firestore और Storage
- */
+ /*
+  * RankHub Firebase Configuration
+  * Firebase Authentication, Firestore & Storage
+  */
 
 import { initializeApp, getApps } from "firebase/app";
 
@@ -13,7 +13,6 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
-  updateProfile as firebaseUpdateProfile,
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
@@ -42,6 +41,7 @@ import {
   deleteObject
 } from "firebase/storage";
 
+
 /* ============================================================
    FIREBASE CONFIGURATION
 ============================================================ */
@@ -51,10 +51,13 @@ const firebaseConfig = {
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId:
+    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
 
 /* ============================================================
    ENVIRONMENT VALIDATION
@@ -77,6 +80,7 @@ for (const key of requiredEnvVars) {
   }
 }
 
+
 /* ============================================================
    FIREBASE APP
 ============================================================ */
@@ -84,6 +88,7 @@ for (const key of requiredEnvVars) {
 const app = getApps().length
   ? getApps()[0]
   : initializeApp(firebaseConfig);
+
 
 /* ============================================================
    FIREBASE SERVICES
@@ -97,46 +102,9 @@ export const db = initializeFirestore(app, {
 
 export const storage = getStorage(app);
 
-/* ============================================================
-   AUTHENTICATION HELPERS & UPDATE PROFILE EXPORT
-============================================================ */
-
-export async function updateProfile(user, profileData) {
-  return firebaseUpdateProfile(user, profileData);
-}
 
 /* ============================================================
-   CHECK PHONE EXISTS
-============================================================ */
-
-export async function checkPhoneExists(mobileNumber) {
-  try {
-    if (!mobileNumber) {
-      return false;
-    }
-
-    const usersRef = collection(db, "users");
-
-    const phoneQuery = query(
-      usersRef,
-      where("mobile", "==", mobileNumber)
-    );
-
-    const snapshot = await getDocs(phoneQuery);
-
-    return !snapshot.empty;
-  } catch (error) {
-    console.error(
-      "Error checking phone uniqueness:",
-      error
-    );
-
-    return false;
-  }
-}
-
-/* ============================================================
-   AUTH EXPORTS
+   AUTHENTICATION EXPORTS
 ============================================================ */
 
 export {
@@ -149,6 +117,42 @@ export {
   GoogleAuthProvider,
   signInWithPopup
 };
+
+
+/* ============================================================
+   CHECK PHONE EXISTS
+============================================================ */
+
+export async function checkPhoneExists(mobileNumber) {
+  try {
+    const mobile = String(mobileNumber || "").trim();
+
+    if (!mobile) {
+      return false;
+    }
+
+    const usersRef = collection(db, "users");
+
+    const phoneQuery = query(
+      usersRef,
+      where("mobile", "==", mobile)
+    );
+
+    const snapshot = await getDocs(phoneQuery);
+
+    return !snapshot.empty;
+
+  } catch (error) {
+
+    console.error(
+      "RankHub: Error checking phone uniqueness:",
+      error
+    );
+
+    throw error;
+  }
+}
+
 
 /* ============================================================
    FIRESTORE EXPORTS
@@ -168,6 +172,7 @@ export {
   addDoc
 };
 
+
 /* ============================================================
    STORAGE EXPORTS
 ============================================================ */
@@ -179,17 +184,21 @@ export {
   deleteObject
 };
 
+
 /* ============================================================
    CURRENT USER
 ============================================================ */
 
 export function getCurrentUser() {
+
   return new Promise((resolve) => {
+
     let unsubscribe = null;
 
     unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
+
         if (unsubscribe) {
           unsubscribe();
         }
@@ -197,8 +206,11 @@ export function getCurrentUser() {
         resolve(user);
       }
     );
+
   });
+
 }
+
 
 /* ============================================================
    FIRESTORE LOG LEVEL
