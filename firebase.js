@@ -24,7 +24,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
-  updateProfile,
+  updateProfile as firebaseUpdateProfile,
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
@@ -70,15 +70,13 @@ const firebaseConfig = {
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId:
-    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // ============================================================
-// ENVIRONMENT VARIABLE VALIDATION
+// ENVIRONMENT VALIDATION
 // ============================================================
 
 const requiredEnvVars = [
@@ -102,10 +100,9 @@ for (const key of requiredEnvVars) {
 // FIREBASE INITIALIZATION
 // ============================================================
 
-const app =
-  getApps().length > 0
-    ? getApps()[0]
-    : initializeApp(firebaseConfig);
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
 
 // ============================================================
 // FIREBASE SERVICES
@@ -118,6 +115,45 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+
+// ============================================================
+// AUTHENTICATION EXPORTS
+// ============================================================
+
+export {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  updatePassword,
+  GoogleAuthProvider,
+  signInWithPopup
+};
+
+// ============================================================
+// UPDATE PROFILE
+// ============================================================
+
+/*
+ * Wrapper बनाया गया है ताकि Rollup/Vite में
+ * updateProfile का export हमेशा उपलब्ध रहे।
+ */
+
+export async function updateProfile(user, profileData) {
+  if (!user) {
+    throw new Error("Firebase user is required.");
+  }
+
+  if (!profileData || typeof profileData !== "object") {
+    throw new Error("Profile data is required.");
+  }
+
+  return await firebaseUpdateProfile(
+    user,
+    profileData
+  );
+}
 
 // ============================================================
 // CHECK PHONE EXISTS
@@ -136,7 +172,11 @@ export async function checkPhoneExists(mobileNumber) {
 
     const phoneQuery = query(
       usersRef,
-      where("mobile", "==", mobileNumber)
+      where(
+        "mobile",
+        "==",
+        mobileNumber
+      )
     );
 
     const snapshot =
@@ -145,6 +185,7 @@ export async function checkPhoneExists(mobileNumber) {
     return !snapshot.empty;
 
   } catch (error) {
+
     console.error(
       "Error checking phone uniqueness:",
       error
@@ -153,22 +194,6 @@ export async function checkPhoneExists(mobileNumber) {
     return false;
   }
 }
-
-// ============================================================
-// AUTHENTICATION EXPORTS
-// ============================================================
-
-export {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  updatePassword,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithPopup
-};
 
 // ============================================================
 // FIRESTORE EXPORTS
@@ -204,12 +229,15 @@ export {
 // ============================================================
 
 export function getCurrentUser() {
+
   return new Promise((resolve) => {
-    let unsubscribe;
+
+    let unsubscribe = null;
 
     unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
+
         if (unsubscribe) {
           unsubscribe();
         }
@@ -217,6 +245,7 @@ export function getCurrentUser() {
         resolve(user);
       }
     );
+
   });
 }
 
