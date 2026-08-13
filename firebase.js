@@ -1,6 +1,6 @@
 /*
  * RankHub Firebase Configuration
- * Firebase Authentication, Firestore & Storage
+ * Firebase Authentication, Firestore और Storage
  */
 
 import { initializeApp, getApps } from "firebase/app";
@@ -13,7 +13,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
-  updateProfile,
+  updateProfile as firebaseUpdateProfile,
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
@@ -51,11 +51,9 @@ const firebaseConfig = {
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId:
-    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 /* ============================================================
@@ -100,7 +98,37 @@ export const db = initializeFirestore(app, {
 export const storage = getStorage(app);
 
 /* ============================================================
-   AUTHENTICATION EXPORTS
+   CHECK PHONE EXISTS
+============================================================ */
+
+export async function checkPhoneExists(mobileNumber) {
+  try {
+    if (!mobileNumber) {
+      return false;
+    }
+
+    const usersRef = collection(db, "users");
+
+    const phoneQuery = query(
+      usersRef,
+      where("mobile", "==", mobileNumber)
+    );
+
+    const snapshot = await getDocs(phoneQuery);
+
+    return !snapshot.empty;
+  } catch (error) {
+    console.error(
+      "Error checking phone uniqueness:",
+      error
+    );
+
+    return false;
+  }
+}
+
+/* ============================================================
+   AUTH EXPORTS
 ============================================================ */
 
 export {
@@ -110,42 +138,10 @@ export {
   onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
-  updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  firebaseUpdateProfile as updateProfile
 };
-
-/* ============================================================
-   CHECK PHONE EXISTS
-============================================================ */
-
-export async function checkPhoneExists(mobileNumber) {
-  try {
-    const mobile = String(mobileNumber || "").trim();
-
-    if (!mobile) {
-      return false;
-    }
-
-    const usersRef = collection(db, "users");
-
-    const phoneQuery = query(
-      usersRef,
-      where("mobile", "==", mobile)
-    );
-
-    const snapshot = await getDocs(phoneQuery);
-
-    return !snapshot.empty;
-  } catch (error) {
-    console.error(
-      "RankHub: Error checking phone uniqueness:",
-      error
-    );
-
-    throw error;
-  }
-}
 
 /* ============================================================
    FIRESTORE EXPORTS
@@ -182,7 +178,7 @@ export {
 
 export function getCurrentUser() {
   return new Promise((resolve) => {
-    let unsubscribe;
+    let unsubscribe = null;
 
     unsubscribe = onAuthStateChanged(
       auth,
