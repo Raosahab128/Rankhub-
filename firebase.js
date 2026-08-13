@@ -3,18 +3,7 @@
  * Firebase Authentication, Firestore और Storage
  */
 
-// ============================================================
-// FIREBASE APP
-// ============================================================
-
-import {
-  initializeApp,
-  getApps
-} from "firebase/app";
-
-// ============================================================
-// FIREBASE AUTHENTICATION
-// ============================================================
+import { initializeApp, getApps } from "firebase/app";
 
 import {
   getAuth,
@@ -28,10 +17,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-
-// ============================================================
-// FIRESTORE
-// ============================================================
 
 import {
   setLogLevel,
@@ -49,10 +34,6 @@ import {
   addDoc
 } from "firebase/firestore";
 
-// ============================================================
-// STORAGE
-// ============================================================
-
 import {
   getStorage,
   ref,
@@ -61,9 +42,9 @@ import {
   deleteObject
 } from "firebase/storage";
 
-// ============================================================
-// FIREBASE CONFIGURATION
-// ============================================================
+/* ============================================================
+   FIREBASE CONFIGURATION
+============================================================ */
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -75,9 +56,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// ============================================================
-// ENVIRONMENT VALIDATION
-// ============================================================
+/* ============================================================
+   ENVIRONMENT VALIDATION
+============================================================ */
 
 const requiredEnvVars = [
   "VITE_FIREBASE_API_KEY",
@@ -96,17 +77,17 @@ for (const key of requiredEnvVars) {
   }
 }
 
-// ============================================================
-// FIREBASE INITIALIZATION
-// ============================================================
+/* ============================================================
+   FIREBASE APP
+============================================================ */
 
 const app = getApps().length
   ? getApps()[0]
   : initializeApp(firebaseConfig);
 
-// ============================================================
-// FIREBASE SERVICES
-// ============================================================
+/* ============================================================
+   FIREBASE SERVICES
+============================================================ */
 
 export const auth = getAuth(app);
 
@@ -116,9 +97,53 @@ export const db = initializeFirestore(app, {
 
 export const storage = getStorage(app);
 
-// ============================================================
-// AUTHENTICATION EXPORTS
-// ============================================================
+/* ============================================================
+   AUTHENTICATION HELPERS
+============================================================ */
+
+/*
+ * Explicit wrapper/export.
+ *
+ * This guarantees that signup.html and other modules
+ * can import updateProfile from ./firebase.js
+ */
+export async function updateProfile(user, profileData) {
+  return firebaseUpdateProfile(user, profileData);
+}
+
+/* ============================================================
+   CHECK PHONE EXISTS
+============================================================ */
+
+export async function checkPhoneExists(mobileNumber) {
+  try {
+    if (!mobileNumber) {
+      return false;
+    }
+
+    const usersRef = collection(db, "users");
+
+    const phoneQuery = query(
+      usersRef,
+      where("mobile", "==", mobileNumber)
+    );
+
+    const snapshot = await getDocs(phoneQuery);
+
+    return !snapshot.empty;
+  } catch (error) {
+    console.error(
+      "Error checking phone uniqueness:",
+      error
+    );
+
+    return false;
+  }
+}
+
+/* ============================================================
+   AUTH EXPORTS
+============================================================ */
 
 export {
   signInWithEmailAndPassword,
@@ -131,73 +156,9 @@ export {
   signInWithPopup
 };
 
-// ============================================================
-// UPDATE PROFILE
-// ============================================================
-
-/*
- * Wrapper बनाया गया है ताकि Rollup/Vite में
- * updateProfile का export हमेशा उपलब्ध रहे।
- */
-
-export async function updateProfile(user, profileData) {
-  if (!user) {
-    throw new Error("Firebase user is required.");
-  }
-
-  if (!profileData || typeof profileData !== "object") {
-    throw new Error("Profile data is required.");
-  }
-
-  return await firebaseUpdateProfile(
-    user,
-    profileData
-  );
-}
-
-// ============================================================
-// CHECK PHONE EXISTS
-// ============================================================
-
-export async function checkPhoneExists(mobileNumber) {
-  try {
-    if (!mobileNumber) {
-      return false;
-    }
-
-    const usersRef = collection(
-      db,
-      "users"
-    );
-
-    const phoneQuery = query(
-      usersRef,
-      where(
-        "mobile",
-        "==",
-        mobileNumber
-      )
-    );
-
-    const snapshot =
-      await getDocs(phoneQuery);
-
-    return !snapshot.empty;
-
-  } catch (error) {
-
-    console.error(
-      "Error checking phone uniqueness:",
-      error
-    );
-
-    return false;
-  }
-}
-
-// ============================================================
-// FIRESTORE EXPORTS
-// ============================================================
+/* ============================================================
+   FIRESTORE EXPORTS
+============================================================ */
 
 export {
   doc,
@@ -213,9 +174,9 @@ export {
   addDoc
 };
 
-// ============================================================
-// STORAGE EXPORTS
-// ============================================================
+/* ============================================================
+   STORAGE EXPORTS
+============================================================ */
 
 export {
   ref,
@@ -224,20 +185,17 @@ export {
   deleteObject
 };
 
-// ============================================================
-// GET CURRENT USER
-// ============================================================
+/* ============================================================
+   CURRENT USER
+============================================================ */
 
 export function getCurrentUser() {
-
   return new Promise((resolve) => {
-
     let unsubscribe = null;
 
     unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-
         if (unsubscribe) {
           unsubscribe();
         }
@@ -245,12 +203,11 @@ export function getCurrentUser() {
         resolve(user);
       }
     );
-
   });
 }
 
-// ============================================================
-// FIRESTORE LOG LEVEL
-// ============================================================
+/* ============================================================
+   FIRESTORE LOG LEVEL
+============================================================ */
 
 setLogLevel("silent");
