@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {}
     }
 
-    const exam = getExamById(id);
+    const exam = await getExamById(id);
 
     if (!exam) {
       showError('Exam not found', `We could not find details for exam "${id}". Please check the URL or select another exam.`);
