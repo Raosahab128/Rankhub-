@@ -94,7 +94,7 @@ function renderProfileDashboard(user, stats, bookmarksCount, sub) {
   const container = document.getElementById('profilePageContainer');
   if (!container) return;
 
-  const userName = user.name || 'Aspirant User';
+ const userName = user.name || user.displayName || 'User';
   const userEmail = user.email || 'aspirant@rankhub.in';
   const userMobile = user.mobile || 'Not added';
   const firstInitial = userName.charAt(0).toUpperCase();
