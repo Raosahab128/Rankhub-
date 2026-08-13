@@ -1,0 +1,6 @@
+{
+  "name": "RankHub",
+  "description": "Ultimate Exam Preparation Platform for SSC, Banking, Railways, UPSC, Defence & State PSC Exams",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

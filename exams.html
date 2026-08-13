@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Explore Competitive Exams | RankHub</title>
+    <link rel="stylesheet" href="/style.css">
+  
+  <style id="auth-guard-style">body { display: none !important; }</style>
+  <script type="module" src="./auth-guard.js"></script>
+</head>
+  <body>
+    <!-- Global Header -->
+        <!-- Global Header -->
+    <header class="global-header">
+      <div class="header-left">
+        <button class="premium-menu-btn" id="menuToggleBtn" aria-label="Open Navigation Menu" aria-expanded="false" aria-controls="appSidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+        <a href="./index.html" class="header-logo" aria-label="RankHub Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="brand-logo-icon"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span class="brand-logo-text"><span class="logo-accent">RANK</span>HUB</span>
+        </a>
+      </div>
+
+      <div class="header-right">
+        <a href="./saved.html" class="header-action-btn" aria-label="Saved Items">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        </a>
+        <a href="./notifications.html" class="header-action-btn header-notif-btn" aria-label="Notifications">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="header-notif-dot"></span>
+        </a>
+        <a href="./profile.html" class="header-profile-avatar" aria-label="User Profile">
+          <img src="https://ui-avatars.com/api/?name=User&background=64748B&color=fff" alt="User Avatar" />
+        </a>
+      </div>
+    </header>
+
+    <!-- Side Navigation Drawer -->
+    <!-- Main Page Content -->
+    <main class="page-content container" id="examsAppContainer">
+      <!-- Page Header -->
+      <section class="exams-page-header">
+        <div class="exams-header-text">
+          <span class="exams-section-label">EXAMS</span>
+          <h1 class="exams-page-title">Choose Your Exam</h1>
+          <p class="exams-page-subtitle">अपने exam को खोजें और अपनी preparation शुरू करें।</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="exam-search-box-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input 
+            type="text" 
+            id="examSearchInput" 
+            class="exam-search-input" 
+            placeholder="🔍 Search exam..." 
+            aria-label="Search exam"
+            autocomplete="off"
+          />
+          <button type="button" id="clearSearchInputBtn" class="clear-search-btn" aria-label="Clear search text" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Popular Exams Section -->
+      <section class="exams-section" id="popularExamsSection">
+        <div class="section-heading-row">
+          <h2 class="section-heading-title" id="popularSectionTitle">POPULAR EXAMS</h2>
+          <span class="section-heading-sub" id="popularSectionSub">सबसे ज्यादा पसंद किए जाने वाले exams</span>
+        </div>
+        <div class="exams-responsive-grid" id="popularExamsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- Exam Categories Section -->
+      <section class="exams-section" id="examCategoriesSection">
+        <div class="section-heading-row">
+          <h2 class="section-heading-title">EXAM CATEGORIES</h2>
+          <span class="section-heading-sub">किस category की तैयारी करनी है?</span>
+        </div>
+        <div class="exam-categories-nav-wrapper">
+          <div class="exam-category-chips-row" id="examCategoryChipsContainer">
+            <!-- Dynamically populated by js/exams.js -->
+          </div>
+        </div>
+      </section>
+
+      <div id="searchResultsCountLabel" class="search-results-count-label" style="display: none;"></div>
+
+      <!-- All Exams Section -->
+      <section class="exams-section" id="allExamsSection">
+        <div class="section-heading-row">
+          <h2 class="section-heading-title">ALL EXAMS</h2>
+          <span class="section-heading-sub">सभी उपलब्ध exams</span>
+        </div>
+        <div class="exams-responsive-grid" id="allExamsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- Empty State -->
+      <div class="exam-empty-state" id="examEmptyStateContainer" style="display: none;">
+        <div class="empty-icon-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/></svg>
+        </div>
+        <h3 class="empty-state-title">No exams found</h3>
+        <p class="empty-state-subtitle">Try another search or category.</p>
+        <button type="button" id="emptyStateResetBtn" class="empty-reset-btn">
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Footer -->
+      
+
+    <!-- Fixed Mobile Bottom Navigation Bar -->
+    <nav class="bottom-nav" aria-label="Bottom Navigation">
+      <a href="./index.html" class="bottom-nav-item" aria-label="Home">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="./exams.html" class="bottom-nav-item" aria-label="Explore">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>Explore</span>
+      </a>
+      <a href="./practice.html" class="bottom-nav-item" aria-label="Practice">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span>Practice</span>
+      </a>
+      <a href="./performance.html" class="bottom-nav-item" aria-label="Stats">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Stats</span>
+      </a>
+      <a href="./rankhub-pass.html" class="bottom-nav-item nav-pro-item" aria-label="Pro">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+        <span>Pro</span>
+      </a>
+    </nav>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    
+
+    <!-- Exam Detail Modal -->
+    <div class="modal-backdrop" id="examModalBackdrop"></div>
+    <div class="exam-detail-modal" id="examDetailModal" role="dialog" aria-modal="true" aria-labelledby="examModalTitle">
+      <div class="modal-header-actions">
+        <button type="button" class="modal-close-btn" id="examModalCloseBtn" aria-label="Close details dialog">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-content-body" id="examModalBody">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Professional Sidebar Drawer -->
+  <aside class="app-sidebar" id="appSidebar" aria-label="Main Navigation">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <a href="./index.html" class="sidebar-logo-link" aria-label="RankHub Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-logo-icon">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+          <div class="sidebar-logo-text-group">
+            <span class="sidebar-logo-text"><span class="logo-accent">RANK</span>HUB</span>
+            <span class="sidebar-subtitle">Exam Preparation Platform</span>
+          </div>
+        </a>
+      </div>
+      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Navigation Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- User / Profile Area -->
+    <div class="sidebar-user-card" id="sidebarUserCard">
+      <div class="user-card-avatar">
+        <img src="https://ui-avatars.com/api/?name=User&background=64748B&color=fff" alt="User Avatar" id="sidebarUserAvatar" />
+      </div>
+      <div class="user-card-info">
+        <span class="user-welcome-label" id="sidebarWelcomeLabel">Welcome back 👋</span>
+        <span class="user-card-name" id="sidebarUserName">Prepare smarter. Score better.</span>
+      </div>
+    </div>
+
+    <!-- Sidebar Scrollable Body -->
+    <div class="sidebar-body">
+      <nav class="sidebar-nav">
+        <!-- MAIN GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">MAIN</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./index.html" class="sidebar-nav-item" data-route="/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </a>
+            </li>
+            <li>
+              <a href="./exams.html" class="sidebar-nav-item" data-route="/exams">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                <span>All Exams</span>
+              </a>
+            </li>
+            <li>
+              <a href="./practice.html" class="sidebar-nav-item" data-route="/practice">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                <span>Practice</span>
+              </a>
+            </li>
+            <li>
+              <a href="./pyq.html" class="sidebar-nav-item" data-route="/pyq">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Previous Year Papers</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- LEARNING GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">LEARNING</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./notes.html" class="sidebar-nav-item" data-route="/notes">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                <span>Notes & Study Materials</span>
+              </a>
+            </li>
+            <li>
+              <a href="./current-affairs.html" class="sidebar-nav-item" data-route="/current-affairs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+                <span>GK & Current Affairs</span>
+              </a>
+            </li>
+            <li>
+              <a href="./live-tests.html" class="sidebar-nav-item" data-route="/live-tests">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Live Tests</span>
+                <span class="nav-tag tag-live">LIVE</span>
+              </a>
+            </li>
+            <li>
+              <a href="./rankhub-pass.html" class="sidebar-nav-item nav-item-pro" data-route="/rankhub-pass">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                <span>RankHub Pass</span>
+                <span class="nav-tag tag-pro">PRO</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ACCOUNT GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">ACCOUNT</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./profile.html" class="sidebar-nav-item" data-route="/profile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li>
+              <a href="./performance.html" class="sidebar-nav-item" data-route="/performance">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Performance & Stats</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" id="sidebarLogoutBtn" class="sidebar-nav-item" style="color: #DC2626; font-weight: 600;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon" style="color: #DC2626;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- SUPPORT GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">SUPPORT</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./about.html" class="sidebar-nav-item" data-route="/about">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>About RankHub</span>
+              </a>
+            </li>
+            <li>
+              <a href="./contact.html" class="sidebar-nav-item" data-route="/contact">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <span>Contact Us</span>
+              </a>
+            </li>
+            <li>
+              <a href="./privacy.html" class="sidebar-nav-item" data-route="/privacy">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Privacy Policy</span>
+              </a>
+            </li>
+            <li>
+              <a href="./terms.html" class="sidebar-nav-item" data-route="/terms">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span>Terms of Service</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-brand">RankHub © <span class="sidebar-copyright-year">2026</span></div>
+      <div class="sidebar-footer-tagline">Prepare smarter. Score better.</div>
+    </div>
+  </aside>
+
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px;">
+    <div class="modal-card" style="background: #FFFFFF; width: 100%; max-width: 380px; border-radius: 16px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
+      <div class="modal-title" style="font-size: 1.2rem; font-weight: 800; color: #111827; margin-bottom: 8px;">Log out of RankHub?</div>
+      <div class="modal-desc" style="font-size: 0.875rem; color: #6B7280; margin-bottom: 20px; line-height: 1.4;">Are you sure you want to log out of your account?</div>
+      <div class="modal-actions" style="display: flex; gap: 12px;">
+        <button type="button" id="modalCancelLogout" class="modal-btn btn-cancel" style="flex: 1; height: 42px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;">Cancel</button>
+        <button type="button" id="modalConfirmLogout" class="modal-btn btn-confirm" style="flex: 1; height: 42px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: #DC2626; color: #FFFFFF; border: none; display: flex; align-items: center; justify-content: center;">Logout</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutBtn = document.getElementById('sidebarLogoutBtn');
+      const logoutModal = document.getElementById('logoutModal');
+      const modalCancelLogout = document.getElementById('modalCancelLogout');
+      const modalConfirmLogout = document.getElementById('modalConfirmLogout');
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (logoutModal) logoutModal.style.display = 'flex';
+        });
+      }
+
+      if (modalCancelLogout) {
+        modalCancelLogout.addEventListener('click', () => {
+          if (logoutModal) logoutModal.style.display = 'none';
+        });
+      }
+
+      if (logoutModal) {
+        logoutModal.addEventListener('click', (e) => {
+          if (e.target === logoutModal) logoutModal.style.display = 'none';
+        });
+      }
+
+      if (modalConfirmLogout) {
+        modalConfirmLogout.addEventListener('click', () => {
+          modalConfirmLogout.textContent = 'Logging out...';
+          modalConfirmLogout.disabled = true;
+          try {
+            localStorage.removeItem('rankhub_user');
+            // rankhub_user_stats preserved for returning user
+            sessionStorage.clear();
+          } catch(err) {}
+
+          setTimeout(() => {
+            window.location.href = './signin.html';
+          }, 400);
+        });
+      }
+    });
+  </script>
+  <script type="module" src="./navigation.js"></script>
+  <script type="module" src="./exams.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

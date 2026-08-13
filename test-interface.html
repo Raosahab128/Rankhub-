@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Mock Test Interface | RankHub</title>
+    <link rel="stylesheet" href="/style.css">
+  
+  <style id="auth-guard-style">body { display: none !important; }</style>
+  <script type="module" src="./auth-guard.js"></script>
+</head>
+  <body class="test-runner-body mock-test-page">
+    
+    <!-- Test Header Bar -->
+    <header class="test-header">
+      <div class="test-brand" style="flex: unset;">
+        <button type="button" class="test-back-btn" id="testBackBtn" aria-label="Back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span class="back-text">Back</span>
+        </button>
+        <a href="./index.html" class="brand-logo" aria-label="RankHub Home" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="brand-logo-icon"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span class="brand-logo-text" style="font-size: 1.05rem;"><span class="logo-accent">RANK</span>HUB</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Test Sub-Header (Exam Name, Timer & Menu) -->
+    <div class="test-sub-header">
+      <div class="test-title-block">
+        <h1 class="test-name" id="testHeaderTitle">SSC CGL Tier-1 Full Mock Test</h1>
+        <span class="test-exam-tag" id="testExamTag">SSC CGL</span>
+      </div>
+
+      <div class="test-sub-controls">
+        <!-- Live Timer -->
+        <div class="test-timer-box" id="testTimerBox">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="time-display" id="timeRemainingDisplay">59:59</span>
+        </div>
+
+        <button type="button" id="togglePaletteMenuBtn" class="btn-palette-menu-toggle" aria-label="Open Test Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Palette Drawer Backdrop -->
+    <div class="palette-drawer-backdrop" id="paletteDrawerBackdrop"></div>
+
+    <!-- Test Main Workspace Grid -->
+    <div class="test-workspace-container container">
+      
+      <!-- Left / Top: Question Viewer -->
+      <div class="test-question-area">
+        <div class="question-header-row">
+          <span class="q-num-badge" id="qNumBadge">Question 1 of 10</span>
+          <div class="q-marks-pill">
+            <span>+2 Marks</span> &bull; <span style="color: #DC2626;">-0.50 Negative</span>
+          </div>
+        </div>
+
+        <div class="question-box">
+          <p class="question-text" id="questionText">Loading question...</p>
+        </div>
+
+        <div class="options-group" id="optionsContainer">
+          <!-- Options rendered dynamically -->
+        </div>
+
+        <!-- Action Controls -->
+        <div class="q-actions-bar">
+          <div class="left-q-actions">
+            <button type="button" id="markReviewBtn" class="cbt-action-btn cbt-btn-review">
+              <svg class="btn-flag-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              <span>Mark for Review</span>
+            </button>
+            <button type="button" id="clearOptionBtn" class="cbt-action-btn cbt-btn-clear">
+              <span>Clear Choice</span>
+            </button>
+          </div>
+          <div class="right-q-actions">
+            <button type="button" id="prevQBtn" class="cbt-action-btn cbt-btn-prev" disabled>
+              <svg class="btn-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              <span>Previous</span>
+            </button>
+            <button type="button" id="nextQBtn" class="cbt-action-btn cbt-btn-next">
+              <span>Save & Next</span>
+              <svg class="btn-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side Menu Drawer -->
+      <aside class="test-palette-aside" id="testPaletteAside">
+        <div class="palette-drawer-header">
+          <div class="drawer-title-block">
+            <h3 class="palette-title">TEST MENU</h3>
+          </div>
+          <button type="button" class="palette-close-btn" id="closePaletteBtn" aria-label="Close Menu">&times;</button>
+        </div>
+
+        <div class="palette-section-box">
+          <h4 class="palette-section-title">QUESTION PALETTE</h4>
+          <div class="q-numbers-grid" id="qPaletteGrid">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="palette-section-box">
+          <h4 class="palette-section-title">QUESTION STATUS</h4>
+          <div class="palette-legend-grid">
+            <div class="legend-item"><span class="badge-dot dot-answered"></span> Answered</div>
+            <div class="legend-item"><span class="badge-dot dot-unanswered"></span> Not Answered</div>
+            <div class="legend-item"><span class="badge-dot dot-marked"></span> Marked for Review</div>
+            <div class="legend-item"><span class="badge-dot dot-current"></span> Current</div>
+          </div>
+        </div>
+
+        <div class="palette-footer-actions">
+          <button type="button" id="submitTestSideBtn" class="btn-drawer-submit w-full">
+            <span class="submit-btn-icon">🔴</span>
+            <span>SUBMIT TEST</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Footer -->
+    
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal-backdrop" id="submitConfirmBackdrop"></div>
+    <div class="exam-detail-modal" id="submitConfirmModal" role="dialog" aria-modal="true">
+      <div class="modal-content-body" style="padding: 24px; text-align: center;">
+        <div style="width: 52px; height: 52px; background: #FEF2F2; color: #DC2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.5rem; border: 1px solid #FECACA;">
+          ⚠️
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Submit Test Confirmation</h2>
+        <p style="color: #64748B; font-size: 0.875rem; margin-bottom: 20px;">
+          Are you sure you want to finish and submit your test?
+        </p>
+
+        <!-- Summary Stats inside Modal -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; text-align: left;">
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 8px;">
+            <span style="display: block; font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Questions</span>
+            <span style="font-size: 1.125rem; font-weight: 800; color: #0F172A;" id="confirmTotalQ">0</span>
+          </div>
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; padding: 10px 14px; border-radius: 8px;">
+            <span style="display: block; font-size: 0.7rem; font-weight: 700; color: #DC2626; text-transform: uppercase;">Answered</span>
+            <span style="font-size: 1.125rem; font-weight: 800; color: #DC2626;" id="confirmAnsweredQ">0</span>
+          </div>
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 10px 14px; border-radius: 8px;">
+            <span style="display: block; font-size: 0.7rem; font-weight: 700; color: #2563EB; text-transform: uppercase;">Marked for Review</span>
+            <span style="font-size: 1.125rem; font-weight: 800; color: #2563EB;" id="confirmMarkedQ">0</span>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 8px;">
+            <span style="display: block; font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Not Answered</span>
+            <span style="font-size: 1.125rem; font-weight: 800; color: #64748B;" id="confirmUnansweredQ">0</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button type="button" id="cancelSubmitModalBtn" class="modal-secondary-btn flex-1" style="padding: 12px;">
+            Cancel
+          </button>
+          <button type="button" id="confirmSubmitModalBtn" class="btn-primary flex-1" style="background-color: #DC2626; padding: 12px;">
+            Confirm Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Analysis Result Modal -->
+    <div class="modal-backdrop" id="testResultBackdrop"></div>
+    <div class="exam-detail-modal" id="testResultModal" role="dialog" aria-modal="true">
+      <div class="modal-content-body" id="testResultBody">
+        <div class="result-celebration-header" style="text-align: center; padding: 24px 0;">
+          <div class="score-circle-large" style="width: 110px; height: 110px; border-radius: 50%; background: #FEF2F2; color: #DC2626; border: 4px solid #DC2626; margin: 0 auto 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span style="font-size: 1.875rem; font-weight: 800; line-height: 1;" id="finalScoreVal">18/20</span>
+            <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Score</span>
+          </div>
+          <h2 style="font-size: 1.5rem; font-weight: 800; color: #0F172A; margin-bottom: 4px;">Test Completed!</h2>
+          <p style="color: #64748B; font-size: 0.875rem;" id="resultAccuracyVal">Accuracy: 90% &bull; Rank: #4</p>
+        </div>
+
+        <div class="result-breakdown-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E2E8F0;">
+            <span style="display: block; font-size: 1.25rem; font-weight: 700; color: #16A34A;" id="correctCountVal">9</span>
+            <span style="font-size: 0.75rem; color: #64748B;">Correct</span>
+          </div>
+          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E2E8F0;">
+            <span style="display: block; font-size: 1.25rem; font-weight: 700; color: #DC2626;" id="wrongCountVal">1</span>
+            <span style="font-size: 0.75rem; color: #64748B;">Wrong</span>
+          </div>
+          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E2E8F0;">
+            <span style="display: block; font-size: 1.25rem; font-weight: 700; color: #64748B;" id="skippedCountVal">0</span>
+            <span style="font-size: 0.75rem; color: #64748B;">Skipped</span>
+          </div>
+          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E2E8F0;">
+            <span style="display: block; font-size: 1.25rem; font-weight: 700; color: #3B82F6;" id="timeTakenVal">0m</span>
+            <span style="font-size: 0.75rem; color: #64748B;">Time</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button type="button" id="restartTestBtn" class="btn-primary flex-1" style="background-color: #DC2626;">
+            Re-attempt Test
+          </button>
+          <a href="./exams.html" class="modal-secondary-btn flex-1" style="text-align: center;">
+            Back to Exams
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leave Test Confirmation Modal -->
+    <div class="modal-backdrop" id="leaveConfirmBackdrop"></div>
+    <div class="exam-detail-modal" id="leaveConfirmModal" role="dialog" aria-modal="true">
+      <div class="modal-content-body" style="padding: 24px; text-align: center;">
+        <div style="width: 52px; height: 52px; background: #FEF2F2; color: #DC2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.5rem; border: 1px solid #FECACA;">
+          ⚠️
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Leave Test?</h2>
+        <p style="color: #64748B; font-size: 0.875rem; margin-bottom: 24px;">
+          Your current progress will be saved. You can return to this test later.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <button type="button" id="cancelLeaveModalBtn" class="modal-secondary-btn flex-1" style="padding: 12px;">
+            Cancel
+          </button>
+          <button type="button" id="confirmLeaveModalBtn" class="btn-primary flex-1" style="background-color: #DC2626; padding: 12px;">
+            Leave Test
+          </button>
+        </div>
+      </div>
+    </div>
+  <script type="module" src="./test-interface.js"></script>
+</body>
+</html>

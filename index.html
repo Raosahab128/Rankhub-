@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RankHub | Competitive Exam Preparation</title>
+    <link rel="stylesheet" href="/style.css">
+  
+  <style id="auth-guard-style">body { display: none !important; }</style>
+  <script type="module" src="./auth-guard.js"></script>
+</head>
+  <body>
+    <!-- Global Header -->
+        <!-- Global Header -->
+    <header class="global-header">
+      <div class="header-left">
+        <button class="premium-menu-btn" id="menuToggleBtn" aria-label="Open Navigation Menu" aria-expanded="false" aria-controls="appSidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+        <a href="./index.html" class="header-logo" aria-label="RankHub Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="brand-logo-icon"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span class="brand-logo-text"><span class="logo-accent">RANK</span>HUB</span>
+        </a>
+      </div>
+
+      <div class="header-right">
+        <a href="./saved.html" class="header-action-btn" aria-label="Saved Items">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        </a>
+        <a href="./notifications.html" class="header-action-btn header-notif-btn" aria-label="Notifications">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="header-notif-dot"></span>
+        </a>
+        <a href="./profile.html" class="header-profile-avatar" aria-label="User Profile">
+          <img src="https://ui-avatars.com/api/?name=User&background=64748B&color=fff" alt="User Avatar" />
+        </a>
+      </div>
+    </header>
+
+    <!-- Side Navigation Drawer -->
+    <!-- Main Page Content -->
+    <main class="container page-content">
+      <!-- Welcome Board Section -->
+      <section class="welcome-board-section">
+        <div class="welcome-board-card" id="welcomeBoardCard">
+          <!-- Top Label & Date Row -->
+          <div class="welcome-card-header">
+            <span class="welcome-top-label">RANKHUB • YOUR DAILY PROGRESS</span>
+            <div class="welcome-date" id="welcomeDate">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="date-icon"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              <span id="currentDateText">Tuesday, 11 August 2026</span>
+            </div>
+          </div>
+
+          <!-- Main Greeting & Action Row -->
+          <div class="welcome-main-body">
+            <div class="welcome-text-block">
+              <h2 class="welcome-greeting" id="welcomeGreeting">Welcome to RankHub <span class="wave-hand">👋</span></h2>
+              <p class="welcome-subtitle">Ready to boost your rank today?</p>
+            </div>
+
+            <a href="./practice.html" class="welcome-cta-btn" id="continuePracticeBtn">
+              <svg class="cta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <span>Continue Practice</span>
+              <svg class="cta-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </div>
+
+          <!-- Divider -->
+          <div class="welcome-divider"></div>
+
+          <!-- Progress Metrics (3-column) -->
+          <div class="welcome-metrics-grid">
+            <div class="metric-item">
+              <div class="metric-header">
+                <svg class="metric-icon flame-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                <span class="metric-value streak-val" id="userStreak">12</span>
+              </div>
+              <span class="metric-label">DAY STREAK</span>
+            </div>
+
+            <div class="metric-separator"></div>
+
+            <div class="metric-item">
+              <div class="metric-header">
+                <svg class="metric-icon accuracy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
+                <span class="metric-value accuracy-val" id="userAccuracy">88.4%</span>
+              </div>
+              <span class="metric-label">ACCURACY</span>
+            </div>
+
+            <div class="metric-separator"></div>
+
+            <div class="metric-item">
+              <div class="metric-header">
+                <svg class="metric-icon solved-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span class="metric-value solved-val" id="userSolved">1,240</span>
+              </div>
+              <span class="metric-label">QUESTIONS SOLVED</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Actions Section -->
+      <section class="quick-actions-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Quick Actions</h3>
+            <p class="section-subtitle">Everything you need for your preparation.</p>
+          </div>
+        </div>
+
+        <div class="quick-actions-grid">
+          <!-- 1. Live Tests -->
+          <a href="./live-tests.html" class="quick-action-card" aria-label="Open Live Tests">
+            <div class="action-icon-wrapper bg-red">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-red"><circle cx="12" cy="12" r="2"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              <span class="action-badge badge-red">LIVE</span>
+            </div>
+            <span class="action-label">Live Tests</span>
+          </a>
+
+          <!-- 2. Free Quizzes -->
+          <a href="./practice.html" class="quick-action-card" aria-label="Open Free Quizzes">
+            <div class="action-icon-wrapper bg-orange">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-orange"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span class="action-badge badge-blue">NEW</span>
+            </div>
+            <span class="action-label">Free Quizzes</span>
+          </a>
+
+          <!-- 3. PYQ -->
+          <a href="./pyq.html" class="quick-action-card" aria-label="Open PYQ">
+            <div class="action-icon-wrapper bg-blue">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-blue"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+            </div>
+            <span class="action-label">PYQ</span>
+          </a>
+
+          <!-- 4. Exams -->
+          <a href="./exams.html" class="quick-action-card" aria-label="Open Exams">
+            <div class="action-icon-wrapper bg-purple">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-purple"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <span class="action-label">Exams</span>
+          </a>
+
+          <!-- 5. GK & Current Affairs -->
+          <a href="./current-affairs.html" class="quick-action-card" aria-label="Open GK and Current Affairs">
+            <div class="action-icon-wrapper bg-amber">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-amber"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+            </div>
+            <span class="action-label">GK & CA</span>
+          </a>
+
+          <!-- 6. Notes -->
+          <a href="./notes.html" class="quick-action-card" aria-label="Open Notes">
+            <div class="action-icon-wrapper bg-emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-emerald"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9.5 2v20"/></svg>
+            </div>
+            <span class="action-label">Notes</span>
+          </a>
+
+          <!-- 7. Saved -->
+          <a href="./saved.html" class="quick-action-card" aria-label="Open Saved">
+            <div class="action-icon-wrapper bg-rose">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-rose"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            </div>
+            <span class="action-label">Saved</span>
+          </a>
+
+          <!-- 8. Profile -->
+          <a href="./profile.html" class="quick-action-card" aria-label="Open Profile">
+            <div class="action-icon-wrapper bg-indigo">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon icon-indigo"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <span class="action-label">Profile</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Live Tests & Free Quizzes Section -->
+      <section class="live-tests-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Live Tests & Free Quizzes</h3>
+            <p class="section-subtitle">Challenge yourself and improve your rank.</p>
+          </div>
+          <a href="./live-tests.html" class="view-all-link">
+            <span>View All</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-chips-wrapper" role="tablist" aria-label="Test categories">
+          <button class="filter-chip active" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button class="filter-chip" data-filter="live" role="tab" aria-selected="false">
+            <span class="chip-dot dot-live"></span>Live
+          </button>
+          <button class="filter-chip" data-filter="upcoming" role="tab" aria-selected="false">Upcoming</button>
+          <button class="filter-chip" data-filter="free" role="tab" aria-selected="false">Free</button>
+        </div>
+
+        <!-- Cards Container (Horizontal Snap Scroll on Mobile / Grid on Desktop) -->
+        <div class="tests-scroll-container" id="testsContainer" aria-live="polite">
+          <!-- Cards rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Popular Exams Section -->
+      <section class="popular-exams-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">POPULAR EXAMS</h3>
+            <p class="section-subtitle">Start your preparation with India's most popular competitive exams.</p>
+          </div>
+          <a href="./exams.html" class="view-all-link">
+            <span>View All Exams</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <!-- Exam Category Chips -->
+        <div class="filter-chips-wrapper" id="examCategoryChips" role="tablist" aria-label="Exam categories">
+          <button class="exam-chip active" data-category="all" role="tab" aria-selected="true">All</button>
+          <button class="exam-chip" data-category="ssc" role="tab" aria-selected="false">SSC</button>
+          <button class="exam-chip" data-category="banking" role="tab" aria-selected="false">Banking</button>
+          <button class="exam-chip" data-category="railways" role="tab" aria-selected="false">Railways</button>
+          <button class="exam-chip" data-category="upsc" role="tab" aria-selected="false">UPSC</button>
+          <button class="exam-chip" data-category="bpsc" role="tab" aria-selected="false">BPSC</button>
+          <button class="exam-chip" data-category="police" role="tab" aria-selected="false">Police</button>
+          <button class="exam-chip" data-category="defence" role="tab" aria-selected="false">Defence</button>
+          <button class="exam-chip" data-category="teaching" role="tab" aria-selected="false">Teaching</button>
+          <button class="exam-chip" data-category="engineering" role="tab" aria-selected="false">Engineering</button>
+          <button class="exam-chip" data-category="medical" role="tab" aria-selected="false">Medical</button>
+        </div>
+
+        <!-- Exam Cards Scroll Container -->
+        <div class="exams-scroll-container" id="examsContainer" aria-live="polite">
+          <!-- Cards rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Daily Practice Section -->
+      <section class="daily-practice-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Daily Practice</h3>
+            <p class="section-subtitle">Build your rank, one question at a time.</p>
+          </div>
+          <a href="./practice.html" class="view-all-link">
+            <span>View All</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <!-- Today's Goal Card -->
+        <div class="daily-goal-card" id="dailyGoalCard">
+          <div class="goal-card-header">
+            <div class="goal-info">
+              <span class="goal-label">TODAY'S GOAL</span>
+              <span class="goal-target" id="dailyGoalTarget">30 Questions</span>
+            </div>
+            <div class="goal-stats">
+              <span class="goal-progress-text" id="dailyGoalProgressText">18 / 30 Completed</span>
+              <span class="goal-percentage" id="dailyGoalPercentage">60%</span>
+            </div>
+          </div>
+
+          <div class="goal-progress-bar-bg">
+            <div class="goal-progress-bar-fill" id="dailyGoalProgressBar" style="width: 60%;"></div>
+          </div>
+
+          <div class="goal-card-footer">
+            <div class="goal-streak-note">
+              <span class="flame-emoji">🔥</span>
+              <span id="dailyStreakText">12 day streak — Keep going!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Practice Options Grid (2x2 Mobile, 4-col Desktop) -->
+        <div class="practice-grid">
+          <!-- 1. Quick Practice -->
+          <a href="./practice.html?type=quick" class="practice-card" aria-label="Start Quick Practice">
+            <div class="practice-card-header">
+              <div class="practice-icon-wrapper bg-blue icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <span class="practice-cta-link">
+                <span>Start</span>
+                <svg class="cta-arrow-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+            </div>
+            <h4 class="practice-title">Quick Practice</h4>
+            <p class="practice-desc">Practice a quick set of questions</p>
+          </a>
+
+          <!-- 2. Topic Practice -->
+          <a href="./practice.html?type=topic" class="practice-card" aria-label="Start Topic Practice">
+            <div class="practice-card-header">
+              <div class="practice-icon-wrapper bg-purple icon-purple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              </div>
+              <span class="practice-cta-link">
+                <span>Practice</span>
+                <svg class="cta-arrow-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+            </div>
+            <h4 class="practice-title">Topic Practice</h4>
+            <p class="practice-desc">Focus on a specific topic</p>
+          </a>
+
+          <!-- 3. Subject Practice -->
+          <a href="./practice.html?type=subject" class="practice-card" aria-label="Start Subject Practice">
+            <div class="practice-card-header">
+              <div class="practice-icon-wrapper bg-emerald icon-emerald">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+              <span class="practice-cta-link">
+                <span>Practice</span>
+                <svg class="cta-arrow-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+            </div>
+            <h4 class="practice-title">Subject Practice</h4>
+            <p class="practice-desc">Strengthen your subject knowledge</p>
+          </a>
+
+          <!-- 4. Weak Topics -->
+          <a href="./practice.html?type=weak" class="practice-card" aria-label="Improve Weak Topics">
+            <div class="practice-card-header">
+              <div class="practice-icon-wrapper bg-red icon-red">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              </div>
+              <span class="practice-cta-link">
+                <span>Improve</span>
+                <svg class="cta-arrow-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+            </div>
+            <h4 class="practice-title">Weak Topics</h4>
+            <p class="practice-desc">Improve topics where you need practice</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Current Affairs & GK Section -->
+      <section class="current-affairs-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Current Affairs & GK</h3>
+            <p class="section-subtitle">Stay updated. Stay ahead.</p>
+          </div>
+          <a href="./current-affairs.html" class="view-all-link">
+            <span>View All</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <!-- Category Scroll Chips -->
+        <div class="filter-chips-wrapper" id="caCategoryChips" role="tablist" aria-label="Current affairs categories">
+          <button class="ca-chip active" data-category="all" role="tab" aria-selected="true">All</button>
+          <button class="ca-chip" data-category="national" role="tab" aria-selected="false">National</button>
+          <button class="ca-chip" data-category="international" role="tab" aria-selected="false">International</button>
+          <button class="ca-chip" data-category="economy" role="tab" aria-selected="false">Economy</button>
+          <button class="ca-chip" data-category="science-tech" role="tab" aria-selected="false">Science & Tech</button>
+          <button class="ca-chip" data-category="sports" role="tab" aria-selected="false">Sports</button>
+          <button class="ca-chip" data-category="awards" role="tab" aria-selected="false">Awards</button>
+          <button class="ca-chip" data-category="appointments" role="tab" aria-selected="false">Appointments</button>
+          <button class="ca-chip" data-category="government-schemes" role="tab" aria-selected="false">Government Schemes</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="ca-main-layout" id="caMainContainer" aria-live="polite">
+          <!-- Featured + Secondary cards rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Notes & Study Materials Section -->
+      <section class="notes-study-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Notes & Study Materials</h3>
+            <p class="section-subtitle">Everything you need to prepare smarter.</p>
+          </div>
+          <a href="./notes.html" class="view-all-link">
+            <span>View All</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <!-- Resource Type Filter Chips -->
+        <div class="filter-chips-wrapper" id="notesTypeChips" role="tablist" aria-label="Study material categories">
+          <button class="notes-chip active" data-type="all" role="tab" aria-selected="true">All</button>
+          <button class="notes-chip" data-type="notes" role="tab" aria-selected="false">Notes</button>
+          <button class="notes-chip" data-type="pdf" role="tab" aria-selected="false">PDFs</button>
+          <button class="notes-chip" data-type="study-material" role="tab" aria-selected="false">Study Material</button>
+          <button class="notes-chip" data-type="short-notes" role="tab" aria-selected="false">Short Notes</button>
+          <button class="notes-chip" data-type="important-topics" role="tab" aria-selected="false">Important Topics</button>
+        </div>
+
+        <!-- Subject Shortcuts Horizontal Row -->
+        <div class="subject-shortcuts-wrapper" id="notesSubjectRow" role="group" aria-label="Subject filter shortcuts">
+          <button class="subject-shortcut-btn active" data-subject="all">All Subjects</button>
+          <button class="subject-shortcut-btn" data-subject="polity">Polity</button>
+          <button class="subject-shortcut-btn" data-subject="history">History</button>
+          <button class="subject-shortcut-btn" data-subject="geography">Geography</button>
+          <button class="subject-shortcut-btn" data-subject="science">Science</button>
+          <button class="subject-shortcut-btn" data-subject="maths">Maths</button>
+          <button class="subject-shortcut-btn" data-subject="reasoning">Reasoning</button>
+          <button class="subject-shortcut-btn" data-subject="english">English</button>
+          <button class="subject-shortcut-btn" data-subject="current-affairs">Current Affairs</button>
+        </div>
+
+        <!-- Resource Cards Grid Container -->
+        <div class="notes-cards-grid" id="notesMainContainer" aria-live="polite">
+          <!-- Rendered dynamically by js/home.js -->
+        </div>
+
+        <!-- Quick Subject Access Link -->
+        <div class="notes-bottom-bar">
+          <a href="./notes.html" class="browse-subject-link">
+            <span>Browse All Subjects & Notes</span>
+            <svg class="cta-arrow-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- Performance & Analytics Overview Section -->
+      <section class="performance-overview-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Your Performance</h3>
+            <p class="section-subtitle">Track your progress and improve your rank.</p>
+          </div>
+          <a href="./performance.html" class="view-all-link">
+            <span>View Analytics</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <div class="perf-main-layout" id="performanceMainContainer" aria-live="polite">
+          <!-- Rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- RankHub Pass Pro Section -->
+      <section class="pass-pro-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Unlock More with RankHub Pass Pro</h3>
+            <p class="section-subtitle">Everything you need to prepare without limits.</p>
+          </div>
+          <span class="pass-pro-header-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+            <span>RANKHUB PASS PRO</span>
+          </span>
+        </div>
+
+        <div id="passProMainContainer" aria-live="polite">
+          <!-- Rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Help, Community & Support Section -->
+      <section class="support-community-section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Need Help?</h3>
+            <p class="section-subtitle">We're here to help you prepare better.</p>
+          </div>
+        </div>
+
+        <div class="support-cards-grid" id="supportCardsContainer" aria-live="polite">
+          <!-- Rendered dynamically by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Footer -->
+      
+
+    <!-- Fixed Mobile Bottom Navigation Bar -->
+    <nav class="bottom-nav" aria-label="Bottom Navigation">
+      <a href="./index.html" class="bottom-nav-item" aria-label="Home">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="./exams.html" class="bottom-nav-item" aria-label="Explore">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>Explore</span>
+      </a>
+      <a href="./practice.html" class="bottom-nav-item" aria-label="Practice">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span>Practice</span>
+      </a>
+      <a href="./performance.html" class="bottom-nav-item" aria-label="Stats">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Stats</span>
+      </a>
+      <a href="./rankhub-pass.html" class="bottom-nav-item nav-pro-item" aria-label="Pro">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+        <span>Pro</span>
+      </a>
+    </nav>
+    </main>
+
+    <!-- Bottom Navigation Bar (Fixed for Mobile & Quick Navigation) -->
+    
+
+    <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Professional Sidebar Drawer -->
+  <aside class="app-sidebar" id="appSidebar" aria-label="Main Navigation">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <a href="./index.html" class="sidebar-logo-link" aria-label="RankHub Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-logo-icon">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+          <div class="sidebar-logo-text-group">
+            <span class="sidebar-logo-text"><span class="logo-accent">RANK</span>HUB</span>
+            <span class="sidebar-subtitle">Exam Preparation Platform</span>
+          </div>
+        </a>
+      </div>
+      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Navigation Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- User / Profile Area -->
+    <div class="sidebar-user-card" id="sidebarUserCard">
+      <div class="user-card-avatar">
+        <img src="https://ui-avatars.com/api/?name=User&background=64748B&color=fff" alt="User Avatar" id="sidebarUserAvatar" />
+      </div>
+      <div class="user-card-info">
+        <span class="user-welcome-label" id="sidebarWelcomeLabel">Welcome back 👋</span>
+        <span class="user-card-name" id="sidebarUserName">Prepare smarter. Score better.</span>
+      </div>
+    </div>
+
+    <!-- Sidebar Scrollable Body -->
+    <div class="sidebar-body">
+      <nav class="sidebar-nav">
+        <!-- MAIN GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">MAIN</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./index.html" class="sidebar-nav-item" data-route="/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </a>
+            </li>
+            <li>
+              <a href="./exams.html" class="sidebar-nav-item" data-route="/exams">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                <span>All Exams</span>
+              </a>
+            </li>
+            <li>
+              <a href="./practice.html" class="sidebar-nav-item" data-route="/practice">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                <span>Practice</span>
+              </a>
+            </li>
+            <li>
+              <a href="./pyq.html" class="sidebar-nav-item" data-route="/pyq">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Previous Year Papers</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- LEARNING GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">LEARNING</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./notes.html" class="sidebar-nav-item" data-route="/notes">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                <span>Notes & Study Materials</span>
+              </a>
+            </li>
+            <li>
+              <a href="./current-affairs.html" class="sidebar-nav-item" data-route="/current-affairs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+                <span>GK & Current Affairs</span>
+              </a>
+            </li>
+            <li>
+              <a href="./live-tests.html" class="sidebar-nav-item" data-route="/live-tests">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Live Tests</span>
+                <span class="nav-tag tag-live">LIVE</span>
+              </a>
+            </li>
+            <li>
+              <a href="./rankhub-pass.html" class="sidebar-nav-item nav-item-pro" data-route="/rankhub-pass">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                <span>RankHub Pass</span>
+                <span class="nav-tag tag-pro">PRO</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ACCOUNT GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">ACCOUNT</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./profile.html" class="sidebar-nav-item" data-route="/profile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li>
+              <a href="./performance.html" class="sidebar-nav-item" data-route="/performance">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Performance & Stats</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" id="sidebarLogoutBtn" class="sidebar-nav-item" style="color: #DC2626; font-weight: 600;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon" style="color: #DC2626;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- SUPPORT GROUP -->
+        <div class="nav-group">
+          <div class="nav-group-title">SUPPORT</div>
+          <ul class="nav-group-list">
+            <li>
+              <a href="./about.html" class="sidebar-nav-item" data-route="/about">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>About RankHub</span>
+              </a>
+            </li>
+            <li>
+              <a href="./contact.html" class="sidebar-nav-item" data-route="/contact">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <span>Contact Us</span>
+              </a>
+            </li>
+            <li>
+              <a href="./privacy.html" class="sidebar-nav-item" data-route="/privacy">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Privacy Policy</span>
+              </a>
+            </li>
+            <li>
+              <a href="./terms.html" class="sidebar-nav-item" data-route="/terms">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span>Terms of Service</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-brand">RankHub © <span class="sidebar-copyright-year">2026</span></div>
+      <div class="sidebar-footer-tagline">Prepare smarter. Score better.</div>
+    </div>
+  </aside>
+
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px;">
+    <div class="modal-card" style="background: #FFFFFF; width: 100%; max-width: 380px; border-radius: 16px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
+      <div class="modal-title" style="font-size: 1.2rem; font-weight: 800; color: #111827; margin-bottom: 8px;">Log out of RankHub?</div>
+      <div class="modal-desc" style="font-size: 0.875rem; color: #6B7280; margin-bottom: 20px; line-height: 1.4;">Are you sure you want to log out of your account?</div>
+      <div class="modal-actions" style="display: flex; gap: 12px;">
+        <button type="button" id="modalCancelLogout" class="modal-btn btn-cancel" style="flex: 1; height: 42px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;">Cancel</button>
+        <button type="button" id="modalConfirmLogout" class="modal-btn btn-confirm" style="flex: 1; height: 42px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: #DC2626; color: #FFFFFF; border: none; display: flex; align-items: center; justify-content: center;">Logout</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutBtn = document.getElementById('sidebarLogoutBtn');
+      const logoutModal = document.getElementById('logoutModal');
+      const modalCancelLogout = document.getElementById('modalCancelLogout');
+      const modalConfirmLogout = document.getElementById('modalConfirmLogout');
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (logoutModal) logoutModal.style.display = 'flex';
+        });
+      }
+
+      if (modalCancelLogout) {
+        modalCancelLogout.addEventListener('click', () => {
+          if (logoutModal) logoutModal.style.display = 'none';
+        });
+      }
+
+      if (logoutModal) {
+        logoutModal.addEventListener('click', (e) => {
+          if (e.target === logoutModal) logoutModal.style.display = 'none';
+        });
+      }
+
+      if (modalConfirmLogout) {
+        modalConfirmLogout.addEventListener('click', () => {
+          modalConfirmLogout.textContent = 'Logging out...';
+          modalConfirmLogout.disabled = true;
+          try {
+            localStorage.removeItem('rankhub_user');
+            // rankhub_user_stats preserved for returning user
+            sessionStorage.clear();
+          } catch(err) {}
+
+          setTimeout(() => {
+            window.location.href = './signin.html';
+          }, 400);
+        });
+      }
+    });
+  </script>
+  <script type="module" src="./navigation.js"></script>
+  <script type="module" src="./home.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
+
