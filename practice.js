@@ -11,7 +11,7 @@ import {
   submitQuestionReport 
 } from './question-bank-store.js';
 
-import { EXAMS_DATA, getExamById } from './exam-store.js';
+import { getExamById } from './exam-store.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Populate initial dynamic topic options
-  updateTopicsDropdown();
+  await updateTopicsDropdown();
 
   if (topicParam && topicSelect) {
     selectedTopic = topicParam;
@@ -110,11 +110,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initial Sync
   updateStatsDisplay();
-  renderPracticePage();
+  await renderPracticePage();
 
   // Tab Handlers
   tabs.forEach(tabBtn => {
-    tabBtn.addEventListener('click', () => {
+    tabBtn.addEventListener('click', async () => {
       tabs.forEach(b => {
         b.classList.remove('active');
         b.style.background = '#FFFFFF';
@@ -134,73 +134,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Reset topic & difficulty for PYQ view
       }
 
-      renderPracticePage();
+      await renderPracticePage();
     });
   });
 
   // Filter Event Handlers
   if (examSelect) {
-    examSelect.addEventListener('change', (e) => {
+    examSelect.addEventListener('change', async (e) => {
       selectedExam = e.target.value;
-      updateTopicsDropdown();
+      await updateTopicsDropdown();
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   if (subjectSelect) {
-    subjectSelect.addEventListener('change', (e) => {
+    subjectSelect.addEventListener('change', async (e) => {
       selectedSubject = e.target.value;
-      updateTopicsDropdown();
+      await updateTopicsDropdown();
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   if (topicSelect) {
-    topicSelect.addEventListener('change', (e) => {
+    topicSelect.addEventListener('change', async (e) => {
       selectedTopic = e.target.value;
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   if (difficultySelect) {
-    difficultySelect.addEventListener('change', (e) => {
+    difficultySelect.addEventListener('change', async (e) => {
       selectedDifficulty = e.target.value;
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   // Search Handlers
   if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', async (e) => {
       searchQuery = e.target.value;
       if (clearSearchBtn) clearSearchBtn.style.display = searchQuery.trim().length > 0 ? 'block' : 'none';
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
+    clearSearchBtn.addEventListener('click', async () => {
       if (searchInput) searchInput.value = '';
       searchQuery = '';
       clearSearchBtn.style.display = 'none';
       currentIndex = 0;
-      renderPracticePage();
+      await renderPracticePage();
     });
   }
 
   // Stats & Bookmarks Header Actions
   if (resetStatsBtn) {
-    resetStatsBtn.addEventListener('click', () => {
+    resetStatsBtn.addEventListener('click', async () => {
       if (confirm('Are you sure you want to reset your practice stats?')) {
         resetPracticeProgress();
         sessionState = {};
         updateStatsDisplay();
-        renderPracticePage();
+        await renderPracticePage();
         showToast('Practice stats reset successfully.');
       }
     });
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /**
    * Main Render Function
    */
-  function renderPracticePage() {
+  async function renderPracticePage() {
     updateStatsDisplay();
 
     const filters = {
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       searchQuery: searchQuery
     };
 
-    const questions = getQuestionBank(filters);
+    const questions = await getQuestionBank(filters);
 
     if (!container) return;
 
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const resetBtn = document.getElementById('resetAllFiltersBtn');
       if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
+        resetBtn.addEventListener('click', async () => {
           selectedExam = 'all';
           selectedSubject = 'all';
           selectedTopic = 'all';
@@ -283,8 +283,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (searchInput) searchInput.value = '';
           if (clearSearchBtn) clearSearchBtn.style.display = 'none';
           currentIndex = 0;
-          updateTopicsDropdown();
-          renderPracticePage();
+          await updateTopicsDropdown();
+          await renderPracticePage();
         });
       }
       return;
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bookmarked = isQuestionBookmarked(currentQ.id);
 
     // Get Exam Title for badge
-    const examObj = EXAMS_DATA.find(e => e.id === currentQ.examId);
+    const examObj = await getExamById(currentQ.examId);
     const examName = examObj ? examObj.name : (currentQ.examId ? currentQ.examId.toUpperCase() : 'ALL EXAMS');
 
     // Difficulty badge styling
@@ -510,20 +510,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Language Toggle Buttons
     const langBtns = container.querySelectorAll('.lang-toggle-btn');
     langBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         currentLang = btn.dataset.lang;
-        renderPracticePage();
+        await renderPracticePage();
       });
     });
 
     // Bookmark Toggle
     const bookmarkBtn = document.getElementById('toggleBookmarkBtn');
     if (bookmarkBtn) {
-      bookmarkBtn.addEventListener('click', () => {
+      bookmarkBtn.addEventListener('click', async () => {
         const isNowBookmarked = toggleQuestionBookmark(currentQ);
         showToast(isNowBookmarked ? 'Question bookmarked! 🔖' : 'Bookmark removed.');
         updateBookmarkBadge();
-        renderPracticePage();
+        await renderPracticePage();
       });
     }
 
@@ -539,20 +539,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Option Buttons Click
     const optBtns = container.querySelectorAll('.option-card-btn');
     optBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const optKey = btn.dataset.optkey;
         if (!sessionState[currentQ.id]) {
           sessionState[currentQ.id] = { selectedOption: null, submitted: false, isCorrect: false };
         }
         sessionState[currentQ.id].selectedOption = optKey;
-        renderPracticePage();
+        await renderPracticePage();
       });
     });
 
     // Action Buttons
     const submitBtn = document.getElementById('submitAnswerBtn');
     if (submitBtn) {
-      submitBtn.addEventListener('click', () => {
+      submitBtn.addEventListener('click', async () => {
         const qState = sessionState[currentQ.id];
         if (!qState || !qState.selectedOption) return;
 
@@ -564,26 +564,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         recordQuestionAttempt(currentQ.id, qState.selectedOption, isCorrect, currentQ);
 
         updateStatsDisplay();
-        renderPracticePage();
+        await renderPracticePage();
       });
     }
 
     const prevBtn = document.getElementById('prevQBtn');
     if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
+      prevBtn.addEventListener('click', async () => {
         if (currentIndex > 0) {
           currentIndex--;
-          renderPracticePage();
+          await renderPracticePage();
         }
       });
     }
 
     const nextBtn = document.getElementById('nextQBtn');
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
+      nextBtn.addEventListener('click', async () => {
         if (currentIndex < questions.length - 1) {
           currentIndex++;
-          renderPracticePage();
+          await renderPracticePage();
         } else {
           // Finished all questions in current filter view
           alert(`Great job! You have reached the end of these practice questions.`);
@@ -593,10 +593,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const skipBtn = document.getElementById('skipQBtn');
     if (skipBtn) {
-      skipBtn.addEventListener('click', () => {
+      skipBtn.addEventListener('click', async () => {
         if (currentIndex < questions.length - 1) {
           currentIndex++;
-          renderPracticePage();
+          await renderPracticePage();
         } else {
           showToast('End of question list.');
         }
@@ -607,9 +607,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   /**
    * Dynamically updates topic dropdown options based on Exam & Subject selection
    */
-  function updateTopicsDropdown() {
+  async function updateTopicsDropdown() {
     if (!topicSelect) return;
-    const topics = getTopicsForSubject(selectedExam, selectedSubject);
+    const topics = await getTopicsForSubject(selectedExam, selectedSubject);
 
     topicSelect.innerHTML = '<option value="all">All Topics</option>';
     topics.forEach(top => {
@@ -696,12 +696,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Remove event handlers inside bookmarks list
     const removeBtns = bookmarksListContent.querySelectorAll('.remove-bm-btn');
     removeBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const qid = btn.dataset.qid;
         toggleQuestionBookmark({ id: qid });
         openBookmarksModal();
         updateBookmarkBadge();
-        renderPracticePage();
+        await renderPracticePage();
       });
     });
   }
