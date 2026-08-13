@@ -5,116 +5,290 @@
  */
 
 import { initializeApp, getApps } from "firebase/app";
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged, 
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
+  updateProfile,
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-import { setLogLevel, initializeFirestore, getFirestore, query, where, orderBy, limit, doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+
+import {
+  setLogLevel,
+  initializeFirestore,
+  query,
+  where,
+  orderBy,
+  limit,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc
+} from "firebase/firestore";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "firebase/storage";
 
 
-// Intercept and suppress Firestore offline/connection warnings to prevent preview error overlay
+// ============================================================
+// FIRESTORE CONNECTION WARNING SUPPRESSION
+// ============================================================
+
+// Firestore offline/connection warnings को suppress करता है
+// ताकि preview में unnecessary error overlay न आए।
+
 const originalConsoleError = console.error;
-console.error = function(...args) {
-  const isFirestoreError = args.some(arg => {
-    if (typeof arg === 'string') return arg.includes('Could not reach Cloud Firestore backend') || arg.includes('[code=unavailable]');
-    if (arg instanceof Error) return arg.message.includes('Could not reach Cloud Firestore backend') || arg.message.includes('[code=unavailable]');
+
+console.error = function (...args) {
+  const isFirestoreError = args.some((arg) => {
+
+    if (typeof arg === "string") {
+      return (
+        arg.includes(
+          "Could not reach Cloud Firestore backend"
+        ) ||
+        arg.includes("[code=unavailable]")
+      );
+    }
+
+    if (arg instanceof Error) {
+      return (
+        arg.message.includes(
+          "Could not reach Cloud Firestore backend"
+        ) ||
+        arg.message.includes("[code=unavailable]")
+      );
+    }
+
     return false;
   });
-  if (isFirestoreError) return;
+
+  if (isFirestoreError) {
+    return;
+  }
+
   originalConsoleError.apply(console, args);
 };
 
-// Firebase configuration using environment variables
+
+// ============================================================
+// FIREBASE CONFIGURATION
+// ============================================================
+
+// Firebase configuration environment variables से आती है।
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey:
+    import.meta.env.VITE_FIREBASE_API_KEY,
+
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID,
+
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID,
+
+  measurementId:
+    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Validate configuration
+
+// ============================================================
+// ENVIRONMENT VARIABLE VALIDATION
+// ============================================================
+
 const requiredEnvVars = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_AUTH_DOMAIN',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_FIREBASE_STORAGE_BUCKET',
-  'VITE_FIREBASE_MESSAGING_SENDER_ID',
-  'VITE_FIREBASE_APP_ID'
+  "VITE_FIREBASE_API_KEY",
+  "VITE_FIREBASE_AUTH_DOMAIN",
+  "VITE_FIREBASE_PROJECT_ID",
+  "VITE_FIREBASE_STORAGE_BUCKET",
+  "VITE_FIREBASE_MESSAGING_SENDER_ID",
+  "VITE_FIREBASE_APP_ID"
 ];
 
 requiredEnvVars.forEach((key) => {
+
   if (!import.meta.env[key]) {
-    throw new Error(`Firebase configuration is missing: ${key}. Check your environment variables.`);
+    throw new Error(
+      `Firebase configuration is missing: ${key}. Check your environment variables.`
+    );
   }
+
 });
 
-// Initialize Firebase (prevent duplicate initialization)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Authentication, Firestore, और Storage services को export किया जाता है।
+// ============================================================
+// FIREBASE INITIALIZATION
+// ============================================================
+
+// Firebase को केवल एक बार initialize करता है।
+
+const app =
+  !getApps().length
+    ? initializeApp(firebaseConfig)
+    : getApps()[0];
+
+
+// ============================================================
+// FIREBASE SERVICES
+// ============================================================
+
+// Authentication
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+
+// Firestore
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalForceLongPolling: true
+  }
+);
+
+
+// Firebase Storage
 export const storage = getStorage(app);
 
-// Firestore से user का result history load करता है।
-export async function checkPhoneExists(mobileNumber) {
+
+// ============================================================
+// CHECK PHONE EXISTS
+// ============================================================
+
+/**
+ * Check करता है कि mobile number पहले से users collection
+ * में मौजूद है या नहीं।
+ */
+export async function checkPhoneExists(
+  mobileNumber
+) {
   try {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('mobile', '==', mobileNumber));
-    const querySnapshot = await getDocs(q);
+
+    const usersRef =
+      collection(db, "users");
+
+    const q =
+      query(
+        usersRef,
+        where(
+          "mobile",
+          "==",
+          mobileNumber
+        )
+      );
+
+    const querySnapshot =
+      await getDocs(q);
+
     return !querySnapshot.empty;
+
   } catch (error) {
-    console.error('Error checking phone uniqueness:', error);
-    return false; // Error assuming safe to proceed or should be handled
+
+    console.error(
+      "Error checking phone uniqueness:",
+      error
+    );
+
+    return false;
   }
 }
 
-export { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged, 
+
+// ============================================================
+// FIREBASE AUTH + FIRESTORE + STORAGE EXPORTS
+// ============================================================
+
+export {
+  // Authentication
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
   sendPasswordResetEmail,
   updatePassword,
+
+  // IMPORTANT:
+  // signup.html में updateProfile इस्तेमाल होता है।
+  updateProfile,
+
   GoogleAuthProvider,
   signInWithPopup,
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
+
+  // Firestore
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
   getDocs,
   query,
   where,
   orderBy,
   limit,
   addDoc,
+
+  // Storage
   ref,
   uploadBytes,
   getDownloadURL,
   deleteObject
 };
 
-// Suppress Firestore connection warnings in preview
+
+// ============================================================
+// FIRESTORE LOG LEVEL
+// ============================================================
+
+// Firestore connection warnings को silent करता है।
+
 setLogLevel("silent");
 
-// Helper to get current user robustly without relying on localStorage
+
+// ============================================================
+// GET CURRENT USER
+// ============================================================
+
+/**
+ * Current Firebase user को safely return करता है।
+ *
+ * localStorage पर depend नहीं करता।
+ */
 export const getCurrentUser = () => {
+
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user);
-    });
+
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (user) => {
+
+          unsubscribe();
+
+          resolve(user);
+        }
+      );
+
   });
+
 };
