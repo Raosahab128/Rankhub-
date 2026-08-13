@@ -1,5 +1,6 @@
 import {  auth, db, doc, getDoc, getDocs, collection, query, where , getCurrentUser } from './firebase.js';
 import { getExamById } from './exam-store.js';
+import { getQuestionBank } from './question-bank-store.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('resultContainer');
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const examData = getExamById(examId) || { name: 'Mock Test' };
+    const examData = (await getExamById(examId)) || { name: 'Mock Test' };
 
     // Fetch stats for best score
     let stats = { bestScore: result.score || 0 };
@@ -148,28 +149,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const btn = document.getElementById('viewDetailedAnsBtn');
     if (btn) {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const detailsContainer = document.getElementById('detailedAnswersContainer');
         if (detailsContainer) {
           detailsContainer.style.display = detailsContainer.style.display === 'none' ? 'block' : 'none';
           if (detailsContainer.style.display === 'block') {
-             renderDetailedAnswers(result);
+             await renderDetailedAnswers(result);
           }
         }
       });
     }
   }
 
-  function renderDetailedAnswers(result) {
+  async function renderDetailedAnswers(result) {
     const list = document.getElementById('detailedAnswersList');
     if (!list) return;
 
-    const MOCK_QUESTIONS = [
-      { id: 1, question: "If a sum of money doubles itself in 5 years at simple interest, what is the rate of interest per annum?", options: ["15%", "20%", "25%", "10%"], correct: 1, explanation: "Simple Interest = Principal. Rate = (SI * 100) / (P * T) = (P * 100) / (P * 5) = 20% per annum." },
-      { id: 2, question: "Which Indian state shares the longest land border with Bangladesh?", options: ["Assam", "Meghalaya", "West Bengal", "Tripura"], correct: 2, explanation: "West Bengal shares 2,217 km out of India's total 4,096 km border with Bangladesh." },
-      { id: 3, question: "Select the correctly spelt word:", options: ["Accomodate", "Accommodate", "Acommodate", "Accommodat"], correct: 1, explanation: "'Accommodate' has double 'c' and double 'm'." },
-      { id: 4, question: "Statements: All cats are dogs. All dogs are birds. Conclusion: I. All cats are birds. II. Some birds are cats.", options: ["Only conclusion I follows", "Only conclusion II follows", "Both conclusions I & II follow", "Neither follows"], correct: 2, explanation: "From the statements, both conclusions are logically derived." }
-    ];
+    const queryExamId = result.examId || result.testId || 'ssc-cgl';
+    const allQuestions = await getQuestionBank({ examId: queryExamId });
+    let MOCK_QUESTIONS = [];
+    if (allQuestions.length > 0) {
+      MOCK_QUESTIONS = allQuestions.slice(0, 50).map((q, idx) => {
+        const opts = [q.optionA, q.optionB, q.optionC, q.optionD];
+        const correctIdx = ['optionA', 'optionB', 'optionC', 'optionD'].indexOf(q.correctAnswer);
+        return {
+          id: q.id,
+          question: q.question,
+          options: opts,
+          correct: correctIdx !== -1 ? correctIdx : 0,
+          explanation: q.explanation
+        };
+      });
+    }
 
     list.innerHTML = MOCK_QUESTIONS.map((q, idx) => {
       const userAns = result.answers ? result.answers[idx] : null;
