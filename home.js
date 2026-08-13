@@ -1,6 +1,6 @@
 import { auth, db, doc, getDoc, setDoc, collection, getDocs, onAuthStateChanged, getCurrentUser } from './firebase.js';
 // Rankhub Home Page & Welcome Board Logic
-import { EXAMS_DATA } from './exam-store.js';
+import { getAllExams } from './exam-store.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initWelcomeBoard();
   initQuickActions();
   initLiveTestsSection();
-  initPopularExamsSection();
+  await initPopularExamsSection();
   initDailyPracticeSection();
   initCurrentAffairsSection();
   initNotesSection();
@@ -430,7 +430,8 @@ function getExamScopeLabel(exam) {
   return 'Competitive Exam';
 }
 
-function getFilteredExamsForCategory(selectedCategory) {
+async function getFilteredExamsForCategory(selectedCategory) {
+  const EXAMS_DATA = await getAllExams();
   if (!selectedCategory || selectedCategory === 'all') {
     return EXAMS_DATA.filter(e => e.isPopular || e.isFeatured);
   }
@@ -454,18 +455,19 @@ function getFilteredExamsForCategory(selectedCategory) {
   });
 }
 
-function initPopularExamsSection() {
+async function initPopularExamsSection() {
   const container = document.getElementById('examsContainer');
   const examChips = document.querySelectorAll('.exam-chip');
 
   if (!container) return;
 
   // Initial render with popular/featured exams
-  renderExamCards(getFilteredExamsForCategory('all'), container);
+  const allInitialExams = await getFilteredExamsForCategory('all');
+  renderExamCards(allInitialExams, container);
 
   // Category chip filter listeners
   examChips.forEach(chip => {
-    chip.addEventListener('click', () => {
+    chip.addEventListener('click', async () => {
       const selectedCategory = chip.getAttribute('data-category');
 
       // Update active state
@@ -482,7 +484,7 @@ function initPopularExamsSection() {
       }
 
       // Filter data from EXAMS_DATA
-      const filtered = getFilteredExamsForCategory(selectedCategory);
+      const filtered = await getFilteredExamsForCategory(selectedCategory);
       renderExamCards(filtered, container);
     });
   });
