@@ -1,82 +1,10 @@
 import { getExamById } from './exam-store.js';
 import { getPyqPaperById } from './pyq-store.js';
-import { INITIAL_QUESTION_BANK } from './question-bank-store.js';
+import { getQuestionBank } from './question-bank-store.js';
 import {  auth, db, collection, addDoc, doc, setDoc, getDoc , getCurrentUser } from './firebase.js';
 import { canAccessContent, showRankHubPassModal } from './subscription-service.js';
 
-// Sample Question Banks per exam category
-let MOCK_QUESTIONS = [
-  {
-    id: 1,
-    question: "If a sum of money doubles itself in 5 years at simple interest, what is the rate of interest per annum?",
-    options: ["15%", "20%", "25%", "10%"],
-    correct: 1, // 20%
-    explanation: "Simple Interest = Principal. Rate = (SI * 100) / (P * T) = (P * 100) / (P * 5) = 20% per annum."
-  },
-  {
-    id: 2,
-    question: "Which Indian state shares the longest land border with Bangladesh?",
-    options: ["Assam", "Meghalaya", "West Bengal", "Tripura"],
-    correct: 2, // West Bengal
-    explanation: "West Bengal shares 2,217 km out of India's total 4,096 km border with Bangladesh."
-  },
-  {
-    id: 3,
-    question: "Select the correctly spelt word:",
-    options: ["Accomodate", "Accommodate", "Acommodate", "Accommodat"],
-    correct: 1, // Accommodate
-    explanation: "'Accommodate' has double 'c' and double 'm'."
-  },
-  {
-    id: 4,
-    question: "Statements: All cats are dogs. All dogs are birds. Conclusion: I. All cats are birds. II. Some birds are cats.",
-    options: ["Only conclusion I follows", "Only conclusion II follows", "Both conclusions I & II follow", "Neither follows"],
-    correct: 2, // Both follow
-    explanation: "Since Cats ⊂ Dogs ⊂ Birds, all cats are birds and some birds are cats."
-  },
-  {
-    id: 5,
-    question: "Which fundamental right cannot be suspended even during a National Emergency?",
-    options: ["Article 14 & 19", "Article 20 & 21", "Article 22 & 23", "Article 32"],
-    correct: 1, // Article 20 & 21
-    explanation: "Protection in respect of conviction for offenses (Art 20) and Protection of life and personal liberty (Art 21) cannot be suspended."
-  },
-  {
-    id: 6,
-    question: "What is the capital of Bihar?",
-    options: ["Gaya", "Patna", "Muzaffarpur", "Bhagalpur"],
-    correct: 1,
-    explanation: "Patna is the capital and largest city of Bihar."
-  },
-  {
-    id: 7,
-    question: "A train 150 meters long passes a telegraph post in 12 seconds. What is the speed of the train in km/hr?",
-    options: ["45 km/hr", "50 km/hr", "36 km/hr", "60 km/hr"],
-    correct: 0, // 45 km/hr
-    explanation: "Speed = 150/12 m/s = 12.5 m/s. In km/hr = 12.5 * (18/5) = 45 km/hr."
-  },
-  {
-    id: 8,
-    question: "Who is known as the Father of the Indian Constitution?",
-    options: ["Mahatma Gandhi", "Dr. B.R. Ambedkar", "Jawaharlal Nehru", "Sardar Patel"],
-    correct: 1,
-    explanation: "Dr. Bhimrao Ramji Ambedkar served as the Chairman of the Drafting Committee."
-  },
-  {
-    id: 9,
-    question: "Find the missing term in the series: 3, 7, 15, 31, 63, ?",
-    options: ["127", "125", "120", "128"],
-    correct: 0, // 127
-    explanation: "Pattern: (x * 2) + 1. 63 * 2 + 1 = 127."
-  },
-  {
-    id: 10,
-    question: "Which gland in the human body is known as the Master Gland?",
-    options: ["Thyroid Gland", "Pituitary Gland", "Adrenal Gland", "Pancreas"],
-    correct: 1,
-    explanation: "The Pituitary gland regulates functions of other endocrine glands."
-  }
-];
+let MOCK_QUESTIONS = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   
@@ -102,9 +30,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const examId = urlParams.get('exam') || 'ssc-cgl';
   
   // Dynamic mock questions from bank
-  const filteredBank = INITIAL_QUESTION_BANK.filter(q => q.examId === examId);
-  if (filteredBank.length > 0) {
-    MOCK_QUESTIONS = filteredBank.slice(0, 50).map((q, idx) => {
+  const allQuestions = await getQuestionBank({ examId });
+  if (allQuestions.length > 0) {
+    MOCK_QUESTIONS = allQuestions.slice(0, 50).map((q, idx) => {
       const opts = [q.optionA, q.optionB, q.optionC, q.optionD];
       const correctIdx = ['optionA', 'optionB', 'optionC', 'optionD'].indexOf(q.correctAnswer);
       return {
@@ -117,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  const exam = getExamById(examId) || { name: 'SSC CGL', category: 'SSC' };
+  const exam = (await getExamById(examId)) || { name: 'SSC CGL', category: 'SSC' };
 
   const testId = urlParams.get('test');
   const pyqId = urlParams.get('pyq');
@@ -433,6 +361,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function renderQuestion(idx) {
+    if (MOCK_QUESTIONS.length === 0) {
+      if (questionText) questionText.textContent = "No questions available for this test yet.";
+      if (optionsContainer) optionsContainer.innerHTML = "";
+      if (qNumBadge) qNumBadge.textContent = "0 of 0";
+      return;
+    }
     const q = MOCK_QUESTIONS[idx];
     if (!q) return;
 
