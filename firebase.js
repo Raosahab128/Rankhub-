@@ -67,22 +67,12 @@ import {
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-
-  authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-
-  projectId:
-    import.meta.env.VITE_FIREBASE_PROJECT_ID,
-
-  storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId:
     import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-
-  appId:
-    import.meta.env.VITE_FIREBASE_APP_ID,
-
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId:
     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
@@ -146,11 +136,7 @@ export async function checkPhoneExists(mobileNumber) {
 
     const phoneQuery = query(
       usersRef,
-      where(
-        "mobile",
-        "==",
-        mobileNumber
-      )
+      where("mobile", "==", mobileNumber)
     );
 
     const snapshot =
@@ -159,7 +145,6 @@ export async function checkPhoneExists(mobileNumber) {
     return !snapshot.empty;
 
   } catch (error) {
-
     console.error(
       "Error checking phone uniqueness:",
       error
@@ -215,30 +200,24 @@ export {
 };
 
 // ============================================================
-// CURRENT USER
+// GET CURRENT USER
 // ============================================================
 
 export function getCurrentUser() {
-
   return new Promise((resolve) => {
-
     let unsubscribe;
 
-    unsubscribe =
-      onAuthStateChanged(
-        auth,
-        (user) => {
-
-          if (unsubscribe) {
-            unsubscribe();
-          }
-
-          resolve(user);
+    unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (unsubscribe) {
+          unsubscribe();
         }
-      );
 
+        resolve(user);
+      }
+    );
   });
-
 }
 
 // ============================================================
