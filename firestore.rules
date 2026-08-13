@@ -1,36 +1,48 @@
 rules_version = '2';
+
 service cloud.firestore {
+
   match /databases/{database}/documents {
+
     match /subscriptionPlans/{planId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;
     }
-    
+
     match /settings/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;
     }
 
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
+
+      allow read, write:
+        if request.auth != null
+        && request.auth.uid == userId;
+
       match /testAttempts/{attemptId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write:
+          if request.auth != null
+          && request.auth.uid == userId;
       }
-      
+
       match /testStats/{testId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write:
+          if request.auth != null
+          && request.auth.uid == userId;
       }
-      
+
       match /results/{resultId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write:
+          if request.auth != null
+          && request.auth.uid == userId;
       }
 
       match /subscriptions/{subId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null;
+        allow read, write:
+          if request.auth != null
+          && request.auth.uid == userId;
       }
     }
   }
 }
-
