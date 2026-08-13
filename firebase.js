@@ -3,7 +3,18 @@
  * Firebase Authentication, Firestore और Storage
  */
 
-import { initializeApp, getApps } from "firebase/app";
+// ============================================================
+// FIREBASE APP
+// ============================================================
+
+import {
+  initializeApp,
+  getApps
+} from "firebase/app";
+
+// ============================================================
+// FIREBASE AUTHENTICATION
+// ============================================================
 
 import {
   getAuth,
@@ -17,6 +28,10 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
+
+// ============================================================
+// FIRESTORE
+// ============================================================
 
 import {
   setLogLevel,
@@ -34,6 +49,10 @@ import {
   addDoc
 } from "firebase/firestore";
 
+// ============================================================
+// STORAGE
+// ============================================================
+
 import {
   getStorage,
   ref,
@@ -43,51 +62,33 @@ import {
 } from "firebase/storage";
 
 // ============================================================
-// FIRESTORE CONNECTION WARNING SUPPRESSION
-// ============================================================
-
-const originalConsoleError = console.error;
-
-console.error = function (...args) {
-  const isFirestoreError = args.some((arg) => {
-    if (typeof arg === "string") {
-      return (
-        arg.includes("Could not reach Cloud Firestore backend") ||
-        arg.includes("[code=unavailable]")
-      );
-    }
-
-    if (arg instanceof Error) {
-      return (
-        arg.message.includes("Could not reach Cloud Firestore backend") ||
-        arg.message.includes("[code=unavailable]")
-      );
-    }
-
-    return false;
-  });
-
-  if (isFirestoreError) return;
-
-  originalConsoleError.apply(console, args);
-};
-
-// ============================================================
 // FIREBASE CONFIGURATION
 // ============================================================
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID,
+
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID,
+
+  measurementId:
+    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // ============================================================
-// ENVIRONMENT VALIDATION
+// ENVIRONMENT VARIABLE VALIDATION
 // ============================================================
 
 const requiredEnvVars = [
@@ -99,21 +100,22 @@ const requiredEnvVars = [
   "VITE_FIREBASE_APP_ID"
 ];
 
-requiredEnvVars.forEach((key) => {
+for (const key of requiredEnvVars) {
   if (!import.meta.env[key]) {
     throw new Error(
       `Firebase configuration is missing: ${key}. Check your environment variables.`
     );
   }
-});
+}
 
 // ============================================================
 // FIREBASE INITIALIZATION
 // ============================================================
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const app =
+  getApps().length > 0
+    ? getApps()[0]
+    : initializeApp(firebaseConfig);
 
 // ============================================================
 // FIREBASE SERVICES
@@ -128,30 +130,36 @@ export const db = initializeFirestore(app, {
 export const storage = getStorage(app);
 
 // ============================================================
-// AUTH / USER HELPERS
+// CHECK PHONE EXISTS
 // ============================================================
 
-/**
- * Check whether a mobile number already exists
- * in the Firestore users collection.
- */
 export async function checkPhoneExists(mobileNumber) {
   try {
     if (!mobileNumber) {
       return false;
     }
 
-    const usersRef = collection(db, "users");
-
-    const q = query(
-      usersRef,
-      where("mobile", "==", mobileNumber)
+    const usersRef = collection(
+      db,
+      "users"
     );
 
-    const querySnapshot = await getDocs(q);
+    const phoneQuery = query(
+      usersRef,
+      where(
+        "mobile",
+        "==",
+        mobileNumber
+      )
+    );
 
-    return !querySnapshot.empty;
+    const snapshot =
+      await getDocs(phoneQuery);
+
+    return !snapshot.empty;
+
   } catch (error) {
+
     console.error(
       "Error checking phone uniqueness:",
       error
@@ -162,11 +170,10 @@ export async function checkPhoneExists(mobileNumber) {
 }
 
 // ============================================================
-// FIREBASE AUTH + FIRESTORE + STORAGE EXPORTS
+// AUTHENTICATION EXPORTS
 // ============================================================
 
 export {
-  // Authentication
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -175,9 +182,14 @@ export {
   updatePassword,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithPopup
+};
 
-  // Firestore
+// ============================================================
+// FIRESTORE EXPORTS
+// ============================================================
+
+export {
   doc,
   getDoc,
   setDoc,
@@ -188,9 +200,14 @@ export {
   where,
   orderBy,
   limit,
-  addDoc,
+  addDoc
+};
 
-  // Storage
+// ============================================================
+// STORAGE EXPORTS
+// ============================================================
+
+export {
   ref,
   uploadBytes,
   getDownloadURL,
@@ -198,23 +215,34 @@ export {
 };
 
 // ============================================================
+// CURRENT USER
+// ============================================================
+
+export function getCurrentUser() {
+
+  return new Promise((resolve) => {
+
+    let unsubscribe;
+
+    unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (user) => {
+
+          if (unsubscribe) {
+            unsubscribe();
+          }
+
+          resolve(user);
+        }
+      );
+
+  });
+
+}
+
+// ============================================================
 // FIRESTORE LOG LEVEL
 // ============================================================
 
 setLogLevel("silent");
-
-// ============================================================
-// GET CURRENT USER
-// ============================================================
-
-export const getCurrentUser = () => {
-  return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        unsubscribe();
-        resolve(user);
-      }
-    );
-  });
-};
