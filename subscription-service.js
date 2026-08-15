@@ -31,8 +31,8 @@ const DEFAULT_SETTINGS = {
 
 export const DEFAULT_PLANS = [
   {
-    planId: 'free',
-    name: 'Free',
+    planId: 'launch_offer',
+    name: 'launch offer',
     price: 0,
     durationDays: 7,
     features: [
