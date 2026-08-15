@@ -21,7 +21,7 @@ import {
 document.addEventListener('DOMContentLoaded', async () => {
 
   // ----------------------------------------------------------
-  // GET FIREBASE USER
+  // AUTH
   // ----------------------------------------------------------
 
   const firebaseUser = await getCurrentUser();
@@ -31,22 +31,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 
-  // ----------------------------------------------------------
-  // CURRENT USER
-  // ----------------------------------------------------------
-
   let currentUser = {
     uid: firebaseUser.uid,
     email: firebaseUser.email || '',
     name:
       firebaseUser.displayName ||
-      firebaseUser.email?.split('@')[0] ||
-      'User'
+      (firebaseUser.email
+        ? firebaseUser.email.split('@')[0]
+        : 'User')
   };
 
 
   // ----------------------------------------------------------
-  // LOCAL USER DATA
+  // LOCAL USER
   // ----------------------------------------------------------
 
   try {
@@ -60,15 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         JSON.parse(saved);
 
       if (parsed && typeof parsed === 'object') {
-
         currentUser = {
           ...currentUser,
           ...parsed,
-
-          // Firebase UID must always win
           uid: firebaseUser.uid
         };
-
       }
     }
 
@@ -78,13 +71,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       'Could not read local user:',
       error
     );
-
   }
 
 
-  // ==========================================================
-  // PAGE ELEMENTS
-  // ==========================================================
+  // ----------------------------------------------------------
+  // ELEMENTS
+  // ----------------------------------------------------------
 
   const skeletonEl =
     document.getElementById(
@@ -107,9 +99,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // URL
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const urlParams =
     new URLSearchParams(
@@ -125,25 +117,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     'overview';
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // RETRY
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (retryBtn) {
 
     retryBtn.addEventListener(
       'click',
-      () => {
-        loadExamDetail(examId);
-      }
+      () => loadExamDetail(examId)
     );
 
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // INITIAL LOAD
-  // ==========================================================
+  // ----------------------------------------------------------
 
   await loadExamDetail(examId);
 
@@ -157,11 +147,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     showSkeleton();
 
 
-    // --------------------------------------------------------
-    // CHECK SUBSCRIPTION
-    // --------------------------------------------------------
+    let subscription = null;
+    let hasPremiumAccess = false;
 
-    let isUserPremium = false;
+
+    // --------------------------------------------------------
+    // GET USER SUBSCRIPTION
+    // --------------------------------------------------------
 
     const uid =
       auth.currentUser?.uid ||
@@ -173,14 +165,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       try {
 
-        const subscription =
+        subscription =
           await getUserSubscription(uid);
-
-
-        isUserPremium =
-          checkPremiumSubscription(
-            subscription
-          );
 
 
         console.log(
@@ -188,10 +174,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           subscription
         );
 
+
+        hasPremiumAccess =
+          checkPremiumAccess(
+            subscription
+          );
+
+
         console.log(
-          'RankHub premium:',
-          isUserPremium
+          'Premium access:',
+          hasPremiumAccess
         );
+
 
       } catch (error) {
 
@@ -200,10 +194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           error
         );
 
-        isUserPremium = false;
-
+        hasPremiumAccess = false;
       }
-
     }
 
 
@@ -211,7 +203,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // GET EXAM
     // --------------------------------------------------------
 
-    let exam;
+    let exam = null;
+
 
     try {
 
@@ -226,8 +219,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
       showError(
-        'Exam loading failed',
-        'Exam data could not be loaded. Please try again.'
+        'Unable to load exam',
+        'Please try again.'
       );
 
       return;
@@ -238,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       showError(
         'Exam not found',
-        `We could not find details for exam "${id}". Please check the URL or select another exam.`
+        `We could not find details for exam "${id}".`
       );
 
       return;
@@ -249,9 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // RENDER
     // --------------------------------------------------------
 
-    renderExamData(
+    await renderExamData(
       exam,
-      isUserPremium
+      hasPremiumAccess,
+      subscription
     );
 
 
@@ -263,17 +257,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     hideSkeleton();
-
   }
 
 
   // ==========================================================
-  // PREMIUM CHECK
+  // PREMIUM ACCESS CHECK
+  //
+  // IMPORTANT:
+  // Kisi bhi valid active paid subscription ko premium access
+  // milega.
   // ==========================================================
 
-  function checkPremiumSubscription(
-    subscription
-  ) {
+  function checkPremiumAccess(subscription) {
 
     if (!subscription) {
       return false;
@@ -282,129 +277,96 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Must be active
     if (
+      subscription.status &&
       subscription.status !== 'active'
     ) {
       return false;
     }
 
 
-    // Free plan is NOT premium
+    // Free plan = no premium
     const planId =
       String(
-        subscription.planId ||
-        ''
+        subscription.planId || ''
       ).toLowerCase();
 
 
+    if (
+      planId === 'free' ||
+      planId === ''
+    ) {
+      return false;
+    }
+
+
+    // Price check
     const price =
       Number(
         subscription.price || 0
       );
 
 
-    if (
-      planId === 'free' &&
-      price <= 0
-    ) {
-      return false;
+    // Paid plan
+    if (price > 0) {
+
+      // Check expiry
+      if (subscription.expiryDate) {
+
+        const expiry =
+          new Date(
+            subscription.expiryDate
+          );
+
+
+        if (
+          !Number.isNaN(
+            expiry.getTime()
+          )
+        ) {
+
+          if (
+            expiry.getTime() <=
+            Date.now()
+          ) {
+            return false;
+          }
+        }
+      }
+
+
+      return true;
     }
 
 
-    // --------------------------------------------------------
-    // CHECK EXPIRY
-    // --------------------------------------------------------
+    // Some admin-created subscriptions may have price 0
+    // but still be intentionally active.
+    //
+    // If planId is not free and expiry is valid,
+    // allow access.
 
     if (subscription.expiryDate) {
 
       const expiry =
-        parseDate(
+        new Date(
           subscription.expiryDate
         );
 
 
-      if (expiry) {
+      if (
+        !Number.isNaN(
+          expiry.getTime()
+        )
+      ) {
 
-        const now =
-          new Date();
-
-        if (
-          expiry <= now
-        ) {
-
-          console.warn(
-            'Subscription expired:',
-            expiry
-          );
-
-          return false;
-        }
-
+        return (
+          expiry.getTime() >
+          Date.now()
+        );
       }
-
     }
 
 
-    // --------------------------------------------------------
-    // PREMIUM
-    // --------------------------------------------------------
-
-    return (
-      subscription.isPremium === true ||
-      (
-        planId !== 'free' &&
-        price > 0
-      )
-    );
-
-  }
-
-
-  // ==========================================================
-  // DATE PARSER
-  // ==========================================================
-
-  function parseDate(value) {
-
-    if (!value) {
-      return null;
-    }
-
-
-    if (value instanceof Date) {
-      return value;
-    }
-
-
-    if (
-      typeof value.toDate === 'function'
-    ) {
-
-      try {
-        return value.toDate();
-      } catch {
-        return null;
-      }
-
-    }
-
-
-    const date =
-      new Date(value);
-
-
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-
-      return null;
-
-    }
-
-
-    return date;
-
+    return false;
   }
 
 
@@ -415,35 +377,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   function showSkeleton() {
 
     if (skeletonEl) {
-      skeletonEl.style.display =
-        'block';
+      skeletonEl.style.display = 'block';
     }
 
     if (errorEl) {
-      errorEl.style.display =
-        'none';
+      errorEl.style.display = 'none';
     }
 
     if (contentEl) {
-      contentEl.style.display =
-        'none';
+      contentEl.style.display = 'none';
     }
-
   }
 
 
   function hideSkeleton() {
 
     if (skeletonEl) {
-      skeletonEl.style.display =
-        'none';
+      skeletonEl.style.display = 'none';
     }
 
     if (contentEl) {
-      contentEl.style.display =
-        'block';
+      contentEl.style.display = 'block';
     }
-
   }
 
 
@@ -457,13 +412,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   ) {
 
     if (skeletonEl) {
-      skeletonEl.style.display =
-        'none';
+      skeletonEl.style.display = 'none';
     }
 
     if (contentEl) {
-      contentEl.style.display =
-        'none';
+      contentEl.style.display = 'none';
     }
 
     if (errorEl) {
@@ -488,13 +441,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           title;
       }
 
+
       if (subEl) {
         subEl.textContent =
           message;
       }
-
     }
-
   }
 
 
@@ -502,9 +454,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // RENDER EXAM
   // ==========================================================
 
-  function renderExamData(
+  async function renderExamData(
     exam,
-    isUserPremium
+    isUserPremium,
+    subscription
   ) {
 
     document.title =
@@ -550,7 +503,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       logoBox.style.color =
         exam.logoColor ||
         '#DC2626';
-
     }
 
 
@@ -563,7 +515,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             ? exam.name.substring(0, 3)
             : 'EX'
         );
-
     }
 
 
@@ -574,7 +525,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           exam.category ||
           'EXAM'
         ).toUpperCase();
-
     }
 
 
@@ -583,7 +533,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       titleEl.textContent =
         exam.fullTitle ||
         exam.name;
-
     }
 
 
@@ -592,20 +541,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       descEl.textContent =
         exam.description ||
         'Complete exam preparation resources in one place.';
-
     }
 
 
-    // --------------------------------------------------------
-    // HEADER META
-    // --------------------------------------------------------
-
     renderHeaderMeta(exam);
 
-
-    // --------------------------------------------------------
-    // TABS
-    // --------------------------------------------------------
 
     initQuickNavTabs();
 
@@ -619,11 +559,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         'examInfoSub'
       );
 
+
     if (infoSub) {
 
       infoSub.textContent =
         `${exam.name} examination की तैयारी के लिए आवश्यक जानकारी।`;
-
     }
 
 
@@ -692,26 +632,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // CONTENT
     // --------------------------------------------------------
 
-    renderMockTestsList(
+    await renderMockTestsList(
       exam,
       isUserPremium
     );
+
 
     renderPracticeList(
       exam,
       isUserPremium
     );
 
+
     renderPyqList(
       exam,
       isUserPremium
     );
 
+
     renderNotesList(
       exam,
       isUserPremium
     );
-
   }
 
 
@@ -753,7 +695,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cat === 'upsc')
       return 'Civil Services';
 
-    if (cat === 'state psc')
+    if (cat === 'state psc') {
+
       return (
         id.includes('bpsc') ||
         name.includes('bihar') ||
@@ -761,14 +704,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       )
         ? 'State Civil Services'
         : 'State Government';
+    }
 
-    if (cat === 'police')
+
+    if (cat === 'police') {
+
       return (
         id.includes('bihar') ||
         name.includes('bihar')
       )
         ? 'State Government Exam'
         : 'State Government';
+    }
+
 
     if (cat === 'defence')
       return 'Armed Forces';
@@ -782,17 +730,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cat === 'engineering')
       return 'National Entrance';
 
-    if (cat === 'state government jobs')
+    if (
+      cat === 'state government jobs'
+    )
       return 'State Government Exam';
 
 
     return 'Competitive Exam';
-
   }
 
 
   // ==========================================================
-  // STATE / REGION
+  // STATE
   // ==========================================================
 
   function getExamStateOrRegion(exam) {
@@ -808,12 +757,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     )
       return 'Bihar';
 
+
     if (
-      text.includes('up ') ||
       text.includes('uttar pradesh') ||
       text.includes('uppsc')
     )
       return 'Uttar Pradesh';
+
 
     if (
       text.includes('rajasthan') ||
@@ -821,12 +771,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     )
       return 'Rajasthan';
 
+
     if (
-      text.includes('mp') ||
-      text.includes('mppsc') ||
-      text.includes('madhya pradesh')
+      text.includes('madhya pradesh') ||
+      text.includes('mppsc')
     )
       return 'Madhya Pradesh';
+
 
     if (
       text.includes('delhi') ||
@@ -834,11 +785,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     )
       return 'Delhi';
 
+
     if (
       text.includes('maharashtra') ||
       text.includes('mpsc')
     )
       return 'Maharashtra';
+
 
     if (
       text.includes('west bengal') ||
@@ -846,15 +799,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     )
       return 'West Bengal';
 
+
     if (text.includes('punjab'))
       return 'Punjab';
+
 
     if (text.includes('haryana'))
       return 'Haryana';
 
 
     return null;
-
   }
 
 
@@ -873,9 +827,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!metaContainer) {
+    if (!metaContainer)
       return;
-    }
 
 
     const items = [];
@@ -888,12 +841,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           exam.category
         )
       );
-
     }
 
 
     const state =
-      getExamStateOrRegion(exam);
+      getExamStateOrRegion(
+        exam
+      );
 
 
     if (state) {
@@ -901,7 +855,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       items.push(
         escapeHtml(state)
       );
-
     }
 
 
@@ -914,17 +867,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       items.push(
         escapeHtml(scope)
       );
-
     }
 
 
-    if (items.length === 0) {
+    if (!items.length) {
 
       metaContainer.style.display =
         'none';
 
       return;
-
     }
 
 
@@ -941,12 +892,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         .join(
           '<span class="header-meta-bullet">•</span>'
         );
-
   }
 
 
   // ==========================================================
-  // TAB SWITCH
+  // TABS
   // ==========================================================
 
   function switchTab(
@@ -979,22 +929,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     navBtns.forEach(btn => {
 
-      if (
-        btn.dataset.tab ===
-        targetTab
-      ) {
-
-        btn.classList.add(
-          'active'
-        );
-
-      } else {
-
-        btn.classList.remove(
-          'active'
-        );
-
-      }
+      btn.classList.toggle(
+        'active',
+        btn.dataset.tab === targetTab
+      );
 
     });
 
@@ -1035,7 +973,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       activePanel.classList.add(
         'active'
       );
-
     }
 
 
@@ -1046,17 +983,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           window.location.href
         );
 
+
       newUrl.searchParams.set(
         'tab',
         targetTab
       );
+
 
       window.history.replaceState(
         {},
         '',
         newUrl
       );
-
     }
 
 
@@ -1072,6 +1010,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const yOffset = -70;
 
+
         const y =
           tabsBar.getBoundingClientRect()
             .top +
@@ -1083,17 +1022,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           top: y,
           behavior: 'smooth'
         });
-
       }
-
     }
-
   }
 
-
-  // ==========================================================
-  // PANEL ID
-  // ==========================================================
 
   function getPanelId(tabKey) {
 
@@ -1114,18 +1046,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'syllabus':
         return 'tabPanelSyllabus';
 
-      case 'overview':
       default:
         return 'tabPanelOverview';
-
     }
-
   }
 
-
-  // ==========================================================
-  // QUICK TABS
-  // ==========================================================
 
   function initQuickNavTabs() {
 
@@ -1135,16 +1060,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!navBtns.length) {
-      return;
-    }
-
-
     navBtns.forEach(btn => {
 
+      // Prevent duplicate listeners
       if (
-        btn.dataset.rankhubBound ===
-        'true'
+        btn.dataset.rankhubBound === 'true'
       ) {
         return;
       }
@@ -1169,19 +1089,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               true,
               false
             );
-
           }
-
         }
       );
-
     });
-
   }
 
 
   // ==========================================================
-  // SET TEXT
+  // TEXT
   // ==========================================================
 
   function setTextContent(
@@ -1197,9 +1113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       el.textContent =
         value || '-';
-
     }
-
   }
 
 
@@ -1215,27 +1129,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!subjectsGrid) {
+    if (!subjectsGrid)
       return;
-    }
 
 
     if (
-      !exam.subjects ||
+      !Array.isArray(
+        exam.subjects
+      ) ||
       exam.subjects.length === 0
     ) {
 
-      subjectsGrid.innerHTML = `
+      subjectsGrid.innerHTML =
+        `
         <div class="coming-soon-box">
           <p class="coming-soon-text">
             Syllabus topics coming soon for
             ${escapeHtml(exam.name)}
           </p>
         </div>
-      `;
+        `;
 
       return;
-
     }
 
 
@@ -1243,47 +1158,52 @@ document.addEventListener('DOMContentLoaded', async () => {
       exam.subjects
         .map(
           (sub, idx) => `
-            <div class="subject-card">
 
-              <div class="subject-card-header">
+          <div class="subject-card">
 
-                <div class="subject-num">
-                  ${idx + 1}
-                </div>
+            <div class="subject-card-header">
 
-                <h3 class="subject-title">
-                  ${escapeHtml(sub)}
-                </h3>
-
+              <div class="subject-num">
+                ${idx + 1}
               </div>
 
-              <p class="subject-desc">
-                Comprehensive topic-wise syllabus breakdown & key concepts
-              </p>
-
-              <div class="subject-card-footer">
-
-                <a
-                  href="./practice.html?exam=${encodeURIComponent(exam.id)}&subject=${encodeURIComponent(sub)}"
-                  class="btn-subject-practice"
-                >
-                  <span>
-                    Practice ${escapeHtml(sub)} →
-                  </span>
-                </a>
-
-              </div>
+              <h3 class="subject-title">
+                ${escapeHtml(sub)}
+              </h3>
 
             </div>
-          `
+
+
+            <p class="subject-desc">
+              Comprehensive topic-wise syllabus breakdown & key concepts
+            </p>
+
+
+            <div class="subject-card-footer">
+
+              <a
+                href="./practice.html?exam=${encodeURIComponent(exam.id)}&subject=${encodeURIComponent(sub)}"
+                class="btn-subject-practice"
+              >
+                <span>
+                  Practice ${escapeHtml(sub)} →
+                </span>
+              </a>
+
+            </div>
+
+          </div>
+        `
         )
         .join('');
-
   }
 
 
   // ==========================================================
   // MOCK TESTS
+  //
+  // IMPORTANT:
+  // Premium user = ALL tests unlocked
   // ==========================================================
 
   async function renderMockTestsList(
@@ -1297,13 +1217,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!container) {
+    if (!container)
       return;
-    }
 
 
     if (
-      !exam.mockTestsList ||
+      !Array.isArray(
+        exam.mockTestsList
+      ) ||
       exam.mockTestsList.length === 0
     ) {
 
@@ -1313,16 +1234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
       return;
-
     }
 
-
-    container.innerHTML = '';
-
-
-    // --------------------------------------------------------
-    // USER STATS
-    // --------------------------------------------------------
 
     let userTestStats = {};
 
@@ -1359,35 +1272,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       } catch (error) {
 
-        console.error(
-          'Error fetching test stats:',
+        console.warn(
+          'Could not load test stats:',
           error
         );
-
       }
-
     }
 
-
-    // --------------------------------------------------------
-    // RENDER
-    // --------------------------------------------------------
 
     container.innerHTML =
       exam.mockTestsList
         .map(
           (test, i) => {
 
-            // ================================================
-            // IMPORTANT
-            //
-            // PREMIUM USER:
-            // ALL MOCK TESTS UNLOCKED
-            //
-            // FREE USER:
-            // ONLY FIRST TEST FREE
-            // ================================================
-
+            // FIRST TEST FREE
+            // PREMIUM = EVERYTHING FREE/UNLOCKED
             const isLocked =
               !isUserPremium &&
               i > 0;
@@ -1411,7 +1310,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (isLocked) {
 
-              statusBadge = `
+              statusBadge =
+                `
                 <span
                   class="test-status-pill pill-pro"
                   style="
@@ -1422,36 +1322,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                 >
                   🔒 RankHub Pass
                 </span>
-              `;
+                `;
 
             } else if (isUserPremium) {
 
-              statusBadge = `
+              statusBadge =
+                `
                 <span
                   class="test-status-pill pill-free"
                   style="
-                    background:#DCFCE7;
-                    color:#15803D;
+                    background:#DC2626;
+                    color:#FFF;
                   "
                 >
                   🔓 Unlocked
                 </span>
-              `;
+                `;
 
             } else {
 
-              statusBadge = `
+              statusBadge =
+                `
                 <span
                   class="test-status-pill pill-free"
                 >
                   🔓 Free
                 </span>
-              `;
-
+                `;
             }
 
 
-            let actionButtons = `
+            let actionButtons =
+              `
               <button
                 type="button"
                 class="btn-start-test ${
@@ -1478,7 +1380,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     : 'View Details & Start →'
                 }
               </button>
-            `;
+              `;
 
 
             let attemptInfo = '';
@@ -1489,10 +1391,11 @@ document.addEventListener('DOMContentLoaded', async () => {
               hasAttempted
             ) {
 
-              attemptInfo = `
+              attemptInfo =
+                `
                 <div
                   style="
-                    font-size:0.85rem;
+                    font-size:.85rem;
                     color:#475569;
                     margin-top:8px;
                   "
@@ -1500,28 +1403,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                   <span style="margin-right:12px;">
                     <strong>Best Score:</strong>
-                    ${escapeHtml(stat.bestScore)}
-                    /
-                    ${test.marks || 100}
+                    ${stat.bestScore || 0}/${test.marks || 100}
                   </span>
 
                   <span style="margin-right:12px;">
                     <strong>Latest Score:</strong>
-                    ${escapeHtml(stat.latestScore)}
-                    /
-                    ${test.marks || 100}
+                    ${stat.latestScore || 0}/${test.marks || 100}
                   </span>
 
                   <span>
                     <strong>Attempts:</strong>
-                    ${stat.attempts}
+                    ${stat.attempts || 0}
                   </span>
 
                 </div>
-              `;
+                `;
 
 
-              actionButtons = `
+              actionButtons =
+                `
                 <div
                   style="
                     display:flex;
@@ -1540,11 +1440,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                       border:1px solid #DC2626;
                       text-decoration:none;
                       padding:6px 12px;
-                      font-size:0.875rem;
+                      font-size:.875rem;
                     "
                   >
                     View Result
                   </a>
+
 
                   <a
                     href="./test-interface.html?exam=${encodeURIComponent(exam.id)}&test=${encodeURIComponent(test.id)}&reattempt=true"
@@ -1552,24 +1453,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     style="
                       text-decoration:none;
                       padding:6px 12px;
-                      font-size:0.875rem;
+                      font-size:.875rem;
                     "
                   >
                     Re-attempt
                   </a>
 
                 </div>
-              `;
+                `;
 
-            }
+            } else if (isLocked) {
 
-
-            if (isLocked) {
-
-              attemptInfo = `
+              attemptInfo =
+                `
                 <div
                   style="
-                    font-size:0.8125rem;
+                    font-size:.8125rem;
                     color:#DC2626;
                     margin-top:6px;
                     font-weight:700;
@@ -1577,12 +1476,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 >
                   🔒 Unlock with RankHub Pass to attempt
                 </div>
-              `;
-
+                `;
             }
 
 
             return `
+
               <div
                 class="test-item-card"
                 data-test-index="${i}"
@@ -1641,14 +1540,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
               </div>
             `;
-
           }
         )
         .join('');
 
 
     // --------------------------------------------------------
-    // CARD EVENTS
+    // CLICK
     // --------------------------------------------------------
 
     container
@@ -1669,18 +1567,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
             const idx =
-              Number(
-                card.dataset.testIndex
+              parseInt(
+                card.dataset.testIndex,
+                10
               );
 
 
             const testData =
               exam.mockTestsList[idx];
-
-
-            if (!testData) {
-              return;
-            }
 
 
             const isLocked =
@@ -1696,7 +1590,6 @@ document.addEventListener('DOMContentLoaded', async () => {
               );
 
               return;
-
             }
 
 
@@ -1708,9 +1601,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (
               !stat ||
-              Number(
-                stat.attempts || 0
-              ) === 0
+              Number(stat.attempts || 0) === 0
             ) {
 
               openTestDetailsModal(
@@ -1718,19 +1609,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 testData,
                 idx
               );
-
             }
-
           }
         );
-
       });
-
   }
 
 
   // ==========================================================
-  // TEST DETAILS MODAL
+  // TEST MODAL
   // ==========================================================
 
   function openTestDetailsModal(
@@ -1745,9 +1632,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!modal) {
+    if (!modal)
       return;
-    }
 
 
     const titleEl =
@@ -1796,7 +1682,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       titleEl.textContent =
         test.title ||
         `${exam.name} Mock Test #${index + 1}`;
-
     }
 
 
@@ -1805,7 +1690,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       examNameEl.textContent =
         exam.fullTitle ||
         exam.name;
-
     }
 
 
@@ -1813,7 +1697,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       qEl.textContent =
         `${test.questions || 100} Questions`;
-
     }
 
 
@@ -1821,7 +1704,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       mEl.textContent =
         `${test.marks || 100} Marks`;
-
     }
 
 
@@ -1830,7 +1712,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       dEl.textContent =
         test.duration ||
         '60 Mins';
-
     }
 
 
@@ -1839,7 +1720,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       diffEl.textContent =
         test.difficulty ||
         'Moderate';
-
     }
 
 
@@ -1848,7 +1728,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       typeEl.textContent =
         test.type ||
         'Full Length Mock';
-
     }
 
 
@@ -1856,7 +1735,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       startCbtBtn.href =
         `./test-interface.html?exam=${encodeURIComponent(exam.id)}&test=${encodeURIComponent(test.id)}`;
-
     }
 
 
@@ -1870,13 +1748,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.body.style.overflow =
       'hidden';
-
   }
 
-
-  // ==========================================================
-  // CLOSE TEST MODAL
-  // ==========================================================
 
   function closeTestDetailsModal() {
 
@@ -1898,9 +1771,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       document.body.style.overflow =
         '';
-
     }
-
   }
 
 
@@ -1921,12 +1792,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
   if (closeBtn) {
+
     closeBtn.onclick =
       closeTestDetailsModal;
   }
 
 
   if (backBtn) {
+
     backBtn.onclick =
       closeTestDetailsModal;
   }
@@ -1942,14 +1815,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           event.target ===
           testModal
         ) {
-
           closeTestDetailsModal();
-
         }
 
       }
     );
-
   }
 
 
@@ -1962,15 +1832,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       ) {
 
         closeTestDetailsModal();
-
       }
-
     }
   );
 
 
   // ==========================================================
-  // PRACTICE SETS
+  // PRACTICE
   // ==========================================================
 
   function renderPracticeList(
@@ -1984,13 +1852,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!container) {
+    if (!container)
       return;
-    }
 
 
     if (
-      !exam.practiceSets ||
+      !Array.isArray(
+        exam.practiceSets
+      ) ||
       exam.practiceSets.length === 0
     ) {
 
@@ -2000,7 +1869,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
       return;
-
     }
 
 
@@ -2014,58 +1882,68 @@ document.addEventListener('DOMContentLoaded', async () => {
               i > 0;
 
 
-            const badgeHtml =
-              isLocked
-                ? `
-                  <span
-                    style="
-                      font-size:0.75rem;
-                      padding:2px 8px;
-                      background:#FEF2F2;
-                      color:#DC2626;
-                      border-radius:999px;
-                      font-weight:700;
-                      margin-left:8px;
-                      border:1px solid #FCA5A5;
-                    "
-                  >
-                    🔒 RankHub Pass
-                  </span>
+            let badgeHtml;
+
+
+            if (isLocked) {
+
+              badgeHtml =
                 `
-                : isUserPremium
-                  ? `
-                    <span
-                      style="
-                        font-size:0.75rem;
-                        padding:2px 8px;
-                        background:#DCFCE7;
-                        color:#15803D;
-                        border-radius:999px;
-                        font-weight:700;
-                        margin-left:8px;
-                      "
-                    >
-                      🔓 Unlocked
-                    </span>
-                  `
-                  : `
-                    <span
-                      style="
-                        font-size:0.75rem;
-                        padding:2px 8px;
-                        background:#DC262610;
-                        color:#DC2626;
-                        border-radius:999px;
-                        font-weight:700;
-                        margin-left:8px;
-                      "
-                    >
-                      🔓 Free
-                    </span>
-                  `;
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#FEF2F2;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                    border:1px solid #FCA5A5;
+                  "
+                >
+                  🔒 RankHub Pass
+                </span>
+                `;
+
+            } else if (isUserPremium) {
+
+              badgeHtml =
+                `
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#DC262610;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                  "
+                >
+                  🔓 Unlocked
+                </span>
+                `;
+
+            } else {
+
+              badgeHtml =
+                `
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#DC262610;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                  "
+                >
+                  🔓 Free
+                </span>
+                `;
+            }
 
 
             return `
+
               <div
                 class="practice-item-card"
                 data-practice-index="${i}"
@@ -2086,8 +1964,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     <span class="practice-subject-tag">
                       ${escapeHtml(
-                        set.subject ||
-                        ''
+                        set.subject || ''
                       )}
                     </span>
 
@@ -2098,8 +1975,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                   <h4 class="practice-title">
                     ${escapeHtml(
-                      set.topic ||
-                      'Practice Set'
+                      set.topic || 'Practice Set'
                     )}
                   </h4>
 
@@ -2153,7 +2029,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
               </div>
             `;
-
           }
         )
         .join('');
@@ -2170,18 +2045,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           () => {
 
             const idx =
-              Number(
-                card.dataset.practiceIndex
+              parseInt(
+                card.dataset.practiceIndex,
+                10
               );
 
 
             const set =
               exam.practiceSets[idx];
-
-
-            if (!set) {
-              return;
-            }
 
 
             const isLocked =
@@ -2197,18 +2068,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               );
 
               return;
-
             }
 
 
             window.location.href =
               `./practice.html?exam=${encodeURIComponent(exam.id)}&topic=${encodeURIComponent(set.id)}`;
-
           }
         );
-
       });
-
   }
 
 
@@ -2227,13 +2094,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!container) {
+    if (!container)
       return;
-    }
 
 
     if (
-      !exam.pyqList ||
+      !Array.isArray(
+        exam.pyqList
+      ) ||
       exam.pyqList.length === 0
     ) {
 
@@ -2243,7 +2111,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
       return;
-
     }
 
 
@@ -2257,54 +2124,65 @@ document.addEventListener('DOMContentLoaded', async () => {
               i > 0;
 
 
-            const badgeHtml =
-              isLocked
-                ? `
-                  <div
-                    class="pyq-badge"
-                    style="
-                      background:#FEF2F2;
-                      color:#DC2626;
-                      border:1px solid #FCA5A5;
-                    "
-                  >
-                    🔒 Pass
-                  </div>
+            let badgeHtml;
+
+
+            if (isLocked) {
+
+              badgeHtml =
                 `
-                : isUserPremium
-                  ? `
-                    <div
-                      class="pyq-badge"
-                      style="
-                        background:#DCFCE7;
-                        color:#15803D;
-                      "
-                    >
-                      ${escapeHtml(
-                        paper.year ||
-                        ''
-                      )}
-                      (Unlocked)
-                    </div>
-                  `
-                  : `
-                    <div
-                      class="pyq-badge"
-                      style="
-                        background:#DC2626;
-                        color:#FFF;
-                      "
-                    >
-                      ${escapeHtml(
-                        paper.year ||
-                        ''
-                      )}
-                      (Free)
-                    </div>
-                  `;
+                <div
+                  class="pyq-badge"
+                  style="
+                    background:#FEF2F2;
+                    color:#DC2626;
+                    border:1px solid #FCA5A5;
+                  "
+                >
+                  🔒 Pass
+                </div>
+                `;
+
+            } else if (isUserPremium) {
+
+              badgeHtml =
+                `
+                <div
+                  class="pyq-badge"
+                  style="
+                    background:#DC2626;
+                    color:#FFF;
+                  "
+                >
+                  ${escapeHtml(
+                    paper.year || ''
+                  )}
+                  (Unlocked)
+                </div>
+                `;
+
+            } else {
+
+              badgeHtml =
+                `
+                <div
+                  class="pyq-badge"
+                  style="
+                    background:#DC2626;
+                    color:#FFF;
+                  "
+                >
+                  ${escapeHtml(
+                    paper.year || ''
+                  )}
+                  (Free)
+                </div>
+                `;
+            }
 
 
             return `
+
               <div
                 class="pyq-item-card"
                 data-pyq-index="${i}"
@@ -2313,22 +2191,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 ${badgeHtml}
 
+
                 <div class="pyq-info">
 
                   <h4 class="pyq-title">
                     ${escapeHtml(
-                      paper.title ||
-                      'Previous Year Paper'
+                      paper.title || 'PYQ Paper'
                     )}
                   </h4>
+
 
                   <div class="pyq-meta">
 
                     <span>
                       Duration:
                       ${escapeHtml(
-                        paper.duration ||
-                        ''
+                        paper.duration || ''
                       )}
                     </span>
 
@@ -2372,7 +2250,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
               </div>
             `;
-
           }
         )
         .join('');
@@ -2389,18 +2266,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           () => {
 
             const idx =
-              Number(
-                card.dataset.pyqIndex
+              parseInt(
+                card.dataset.pyqIndex,
+                10
               );
 
 
             const paper =
               exam.pyqList[idx];
-
-
-            if (!paper) {
-              return;
-            }
 
 
             const isLocked =
@@ -2416,18 +2289,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               );
 
               return;
-
             }
 
 
             window.location.href =
               `./test-interface.html?exam=${encodeURIComponent(exam.id)}&pyq=${encodeURIComponent(paper.id)}`;
-
           }
         );
-
       });
-
   }
 
 
@@ -2446,13 +2315,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
 
 
-    if (!container) {
+    if (!container)
       return;
-    }
 
 
     if (
-      !exam.studyNotes ||
+      !Array.isArray(
+        exam.studyNotes
+      ) ||
       exam.studyNotes.length === 0
     ) {
 
@@ -2462,7 +2332,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
       return;
-
     }
 
 
@@ -2476,55 +2345,68 @@ document.addEventListener('DOMContentLoaded', async () => {
               i > 0;
 
 
-            const badgeHtml =
-              isLocked
-                ? `
-                  <span
-                    style="
-                      font-size:0.75rem;
-                      padding:2px 8px;
-                      background:#FEF2F2;
-                      color:#DC2626;
-                      border-radius:999px;
-                      font-weight:700;
-                      border:1px solid #FCA5A5;
-                    "
-                  >
-                    🔒 RankHub Pass
-                  </span>
+            let badgeHtml;
+
+
+            if (isLocked) {
+
+              badgeHtml =
                 `
-                : isUserPremium
-                  ? `
-                    <span
-                      style="
-                        font-size:0.75rem;
-                        padding:2px 8px;
-                        background:#DCFCE7;
-                        color:#15803D;
-                        border-radius:999px;
-                        font-weight:700;
-                      "
-                    >
-                      🔓 Unlocked
-                    </span>
-                  `
-                  : `
-                    <span
-                      style="
-                        font-size:0.75rem;
-                        padding:2px 8px;
-                        background:#DC262610;
-                        color:#DC2626;
-                        border-radius:999px;
-                        font-weight:700;
-                      "
-                    >
-                      🔓 Free
-                    </span>
-                  `;
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#FEF2F2;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                    border:1px solid #FCA5A5;
+                  "
+                >
+                  🔒 RankHub Pass
+                </span>
+                `;
+
+            } else if (isUserPremium) {
+
+              badgeHtml =
+                `
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#DC262610;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                  "
+                >
+                  🔓 Unlocked
+                </span>
+                `;
+
+            } else {
+
+              badgeHtml =
+                `
+                <span
+                  style="
+                    font-size:.75rem;
+                    padding:2px 8px;
+                    background:#DC262610;
+                    color:#DC2626;
+                    border-radius:999px;
+                    font-weight:700;
+                  "
+                >
+                  🔓 Free
+                </span>
+                `;
+            }
 
 
             return `
+
               <div
                 class="note-item-card"
                 data-note-index="${i}"
@@ -2544,6 +2426,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   >
+
                     <path
                       d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
                     />
@@ -2584,18 +2467,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
                   <span class="note-meta">
+
                     ${escapeHtml(
-                      note.pages ||
-                      ''
+                      note.pages || ''
                     )}
 
                     &bull;
 
                     ${escapeHtml(
-                      note.format ||
-                      ''
+                      note.format || ''
                     )}
+
                     Format
+
                   </span>
 
                 </div>
@@ -2629,7 +2513,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
               </div>
             `;
-
           }
         )
         .join('');
@@ -2646,18 +2529,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           () => {
 
             const idx =
-              Number(
-                card.dataset.noteIndex
+              parseInt(
+                card.dataset.noteIndex,
+                10
               );
 
 
             const note =
               exam.studyNotes[idx];
-
-
-            if (!note) {
-              return;
-            }
 
 
             const isLocked =
@@ -2673,18 +2552,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               );
 
               return;
-
             }
 
 
             window.location.href =
               `./notes.html?exam=${encodeURIComponent(exam.id)}&note=${encodeURIComponent(note.id)}`;
-
           }
         );
-
       });
-
   }
 
 
@@ -2736,13 +2611,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         <p class="coming-soon-sub">
           We are adding quality
-          ${escapeHtml(featureName.toLowerCase())}
+          ${escapeHtml(
+            featureName.toLowerCase()
+          )}
           for this exam soon.
         </p>
 
       </div>
     `;
-
   }
 
 
@@ -2781,7 +2657,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         /'/g,
         '&#039;'
       );
-
   }
 
 });
