@@ -5,7 +5,7 @@ import { getCurrentUser } from './firebase.js';
  * skeleton loading, empty state, and direct navigation to Exam Detail Page.
  */
 
-import { CATEGORIES, getAllExams, filterExams } from './exam-store.js';
+import { CATEGORIES, EXAMS_DATA, filterExams } from './exam-store.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   
@@ -121,8 +121,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  async function applyFiltersAndRender() {
-    const filteredExams = await filterExams(currentCategory, searchQuery);
+  function applyFiltersAndRender() {
+    const filteredExams = filterExams(currentCategory, searchQuery);
     const isFilteringActive = searchQuery.trim().length > 0 || currentCategory !== 'All';
 
     // If no results match search/filter
@@ -160,8 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderExamsGrid(popularGrid, filteredExams);
     } else {
       // Default View: Popular Exams top row/grid + All Exams grid
-      const allExams = await getAllExams();
-      const popularList = allExams.filter(e => e.isPopular || e.isFeatured).slice(0, 6);
+      const popularList = EXAMS_DATA.filter(e => e.isPopular || e.isFeatured).slice(0, 6);
 
       if (popularSection) {
         popularSection.style.display = 'block';
@@ -172,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (allExamsSection) {
         allExamsSection.style.display = 'block';
-        renderExamsGrid(allExamsGrid, allExams);
+        renderExamsGrid(allExamsGrid, EXAMS_DATA);
       }
     }
 
