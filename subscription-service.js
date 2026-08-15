@@ -1,1541 +1,388 @@
-import { auth, db, getCurrentUser } from './firebase.js';
+import { db, auth } from './firebase.js';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, orderBy, deleteDoc } from "firebase/firestore";
 
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  setDoc,
-  serverTimestamp
-} from 'firebase/firestore';
+// Default System Configuration
+const DEFAULT_SETTINGS = {
+  subscriptionSystemEnabled: false, // Free Launch Mode is active by default
+  updatedAt: new Date().toISOString()
+};
 
-import {
-  getUserSubscription,
-  getSubscriptionPlans,
-  getSystemSettings,
-  getActiveSubscription
-} from './subscription-service.js';
-
-
-document.addEventListener('DOMContentLoaded', async () => {
-  const container = document.querySelector('main.page-content');
-
-  if (!container) {
-    console.error('main.page-content not found');
-    return;
+// Default Subscription Plans
+export const DEFAULT_PLANS = [
+  {
+    planId: 'free',
+    name: 'Free',
+    price: 0,
+    durationDays: 99999,
+    features: ['Access to Free Mock Tests', 'Basic Practice Bank', 'Previous Year Question papers preview'],
+    active: true,
+    sortOrder: 1,
+    badge: ''
+  },
+  {
+    planId: '1week', name: '1 Week', price: 29, durationDays: 7, features: ['Unlimited Mock Tests for 7 Days', 'Detailed Performance Analysis', 'All Practice Sets'], active: false,
+    sortOrder: 2,
+    badge: ''
+  },
+  {
+    planId: '6months', name: '6 Months', price: 199, durationDays: 180, features: ['Unlimited Access for 180 Days', 'All Exam Categories', 'Priority Support & Solutions'], active: false,
+    sortOrder: 3,
+    badge: ''
+  },
+  {
+    planId: '1year', name: '1 Year', price: 299, durationDays: 365, features: ['Full Year Access (365 Days)', 'All Exams & Test Series', 'Best Value for Serious Aspirants'], active: false,
+    sortOrder: 4,
+    badge: 'Best Value'
   }
+];
 
-  await renderPassPage(container);
-});
-
-
-/* =========================================================
-   DATE HELPERS
-========================================================= */
-
-function formatNiceDate(dateInput) {
-  if (!dateInput) return '—';
-
-  let d;
-
+// Check if current user is admin
+export async function checkIsAdmin(user) {
+  if (!user) return false;
+  if (user.email === 'dk9665676@gmail.com') return true;
   try {
-    if (dateInput?.toDate) {
-      d = dateInput.toDate();
-    } else if (dateInput instanceof Date) {
-      d = dateInput;
-    } else {
-      d = new Date(dateInput);
-    }
-  } catch (e) {
-    return '—';
-  }
-
-  if (isNaN(d.getTime())) {
-    return '—';
-  }
-
-  const day = d.getDate();
-
-  const month = d.toLocaleString('en-US', {
-    month: 'long'
-  });
-
-  const year = d.getFullYear();
-
-  let hours = d.getHours();
-
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-
-  hours = hours % 12;
-
-  if (hours === 0) {
-    hours = 12;
-  }
-
-  const strHours = String(hours).padStart(2, '0');
-
-  return `${day} ${month} ${year}, ${strHours}:${minutes} ${ampm}`;
-}
-
-
-/* =========================================================
-   GET CURRENT USER
-========================================================= */
-
-async function getLoggedInUser() {
-  let user = auth.currentUser;
-
-  if (user) {
-    return user;
-  }
-
-  try {
-    const firebaseUser = await getCurrentUser();
-
-    if (firebaseUser) {
-      return firebaseUser;
-    }
-  } catch (e) {
-    console.warn('getCurrentUser failed:', e);
-  }
-
-  try {
-    const saved = localStorage.getItem('rankhub_user');
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      if (parsed && parsed.uid) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.warn('Local user read failed:', e);
-  }
-
-  return null;
-}
-
-
-/* =========================================================
-   GET ACTIVE FREE PLAN DIRECTLY FROM FIRESTORE
-========================================================= */
-
-async function getFreePlanDirectly(uid) {
-  if (!uid) return null;
-
-  try {
-    const ref = doc(
-      db,
-      'users',
-      uid,
-      'subscriptions',
-      'free_active'
-    );
-
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-      return null;
-    }
-
-    const data = snap.data();
-
-    if (!data) {
-      return null;
-    }
-
-    /*
-      Check status
-    */
-    if (data.status !== 'active') {
-      return null;
-    }
-
-    /*
-      Check expiry
-    */
-    const expiryValue =
-      data.expiryDate ||
-      data.validUntil;
-
-    if (expiryValue) {
-      let expiryDate;
-
-      try {
-        if (expiryValue?.toDate) {
-          expiryDate = expiryValue.toDate();
-        } else {
-          expiryDate = new Date(expiryValue);
-        }
-      } catch (e) {
-        expiryDate = null;
-      }
-
-      if (
-        expiryDate &&
-        !isNaN(expiryDate.getTime()) &&
-        expiryDate.getTime() <= Date.now()
-      ) {
-        return null;
-      }
-    }
-
-    return {
-      id: snap.id,
-      ...data,
-      isPremium: true,
-      isActive: true
-    };
-
-  } catch (error) {
-    console.error(
-      'Error checking free subscription:',
-      error
-    );
-
-    return null;
-  }
-}
-
-
-/* =========================================================
-   CHECK WHETHER PLAN IS REALLY ACTIVE
-========================================================= */
-
-function checkPlanIsActive(activeSub, userSub, planId) {
-  const normalizedPlanId =
-    String(planId || '').trim().toLowerCase();
-
-  /*
-    First check activeSub returned by subscription service
-  */
-  if (activeSub) {
-    const activePlanId = String(
-      activeSub.planId ||
-      activeSub.id ||
-      ''
-    )
-      .trim()
-      .toLowerCase();
-
-    if (
-      activePlanId === normalizedPlanId &&
-      activeSub.status === 'active'
-    ) {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists() && (userSnap.data().role === 'admin' || userSnap.data().isAdmin === true)) {
       return true;
     }
+  } catch (err) {
+    console.error('Error checking admin status:', err);
   }
-
-  /*
-    Then check userSub
-  */
-  if (userSub) {
-    const userPlanId = String(
-      userSub.planId ||
-      userSub.id ||
-      ''
-    )
-      .trim()
-      .toLowerCase();
-
-    if (
-      userPlanId === normalizedPlanId &&
-      userSub.status === 'active'
-    ) {
-      return true;
-    }
-  }
-
-  /*
-    Finally check allSubscriptions
-  */
-  if (
-    userSub &&
-    Array.isArray(userSub.allSubscriptions)
-  ) {
-    const found = userSub.allSubscriptions.find(sub => {
-      if (!sub) return false;
-
-      const subPlanId = String(
-        sub.planId ||
-        sub.id ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
-
-      return (
-        subPlanId === normalizedPlanId &&
-        sub.status === 'active'
-      );
-    });
-
-    if (found) {
-      return true;
-    }
-  }
-
   return false;
 }
 
-
-/* =========================================================
-   GET PLAN DURATION LABEL
-========================================================= */
-
-function getDurationLabel(plan) {
-  const days = Number(plan?.durationDays || 0);
-
-  if (days >= 365) {
-    return 'Year';
+let cachedSystemSettings = null;
+// Get system settings
+export async function getSystemSettings() {
+  if (cachedSystemSettings) return cachedSystemSettings;
+  try {
+    const docRef = doc(db, 'settings', 'system');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      cachedSystemSettings = snap.data();
+      return cachedSystemSettings;
+    } else {
+      // Initialize if missing
+      await setDoc(docRef, DEFAULT_SETTINGS);
+      cachedSystemSettings = DEFAULT_SETTINGS;
+      return DEFAULT_SETTINGS;
+    }
+  } catch (err) {
+    console.error('Error getting system settings:', err);
+    return DEFAULT_SETTINGS;
   }
-
-  if (days >= 180) {
-    return '6 Months';
-  }
-
-  if (days === 30) {
-    return '30 Days';
-  }
-
-  if (days === 14) {
-    return '14 Days';
-  }
-
-  if (days === 7) {
-    return '7 Days';
-  }
-
-  if (days === 1) {
-    return '1 Day';
-  }
-
-  if (days > 0) {
-    return `${days} Days`;
-  }
-
-  return 'Plan';
 }
 
-
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
-
-function escapeHtml(value) {
-  if (value === null || value === undefined) {
-    return '';
+// Update system settings (Admin only)
+export async function updateSystemSettings(newSettings) {
+  try {
+    const docRef = doc(db, 'settings', 'system');
+    await setDoc(docRef, { ...newSettings, updatedAt: new Date().toISOString() }, { merge: true });
+    cachedSystemSettings = { ...(cachedSystemSettings || DEFAULT_SETTINGS), ...newSettings };
+    return true;
+  } catch (err) {
+    console.error('Error updating system settings:', err);
+    throw err;
   }
-
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
 
-
-/* =========================================================
-   RENDER PAGE
-========================================================= */
-
-async function renderPassPage(container) {
-
-  container.innerHTML = `
-    <div style="
-      text-align:center;
-      padding:40px;
-      color:#64748B;
-      font-weight:600;
-    ">
-      Loading RankHub Pass Pro...
-    </div>
-  `;
-
-
-  /* -------------------------------------------------------
-     USER
-  ------------------------------------------------------- */
-
-  const user = await getLoggedInUser();
-
-
-  /* -------------------------------------------------------
-     LOAD DATA
-  ------------------------------------------------------- */
-
-  let settings = {};
-  let plans = [];
-  let userSub = null;
-  let activeSub = null;
-  let directFreeSub = null;
-
-
+let cachedSubscriptionPlans = null;
+// Get all subscription plans
+export async function getSubscriptionPlans() {
+  if (cachedSubscriptionPlans) return cachedSubscriptionPlans;
   try {
-    settings = await getSystemSettings();
-  } catch (e) {
-    console.warn('System settings failed:', e);
+    const colRef = collection(db, 'subscriptionPlans');
+    const snap = await getDocs(colRef);
+    if (snap.empty) {
+      // Seed default plans if none exist
+      for (const plan of DEFAULT_PLANS) {
+        await setDoc(doc(db, 'subscriptionPlans', plan.planId), {
+          ...plan,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      cachedSubscriptionPlans = DEFAULT_PLANS;
+      return DEFAULT_PLANS;
+    }
+    const plans = [];
+    snap.forEach(docSnap => {
+      plans.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    cachedSubscriptionPlans = plans.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return cachedSubscriptionPlans;
+  } catch (err) {
+    console.error('Error fetching subscription plans:', err);
+    return DEFAULT_PLANS;
   }
+}
 
+export async function getActiveSubscription(userId) {
+  const sub = await getUserSubscription(userId);
+  if (sub && sub.status === 'active') {
+    const now = new Date();
+    const expiryDateStr = sub.expiryDate || sub.validUntil;
+    if (expiryDateStr) {
+      const expiry = new Date(expiryDateStr);
+      if (expiry > now) return sub;
+    } else {
+      return sub;
+    }
+  }
+  return null;
+}
 
+export function isPlanActive(activeSub, planId) {
+  if (!activeSub || activeSub.status !== 'active') return false;
+  const now = new Date();
+  const expiryDateStr = activeSub.expiryDate || activeSub.validUntil;
+  if (expiryDateStr) {
+    const expiry = new Date(expiryDateStr);
+    if (expiry <= now) return false;
+  }
+  if (activeSub.planId === planId) return true;
+  if (planId === 'free' && activeSub.planId === 'free') {
+    return true;
+  }
+  return false;
+}
+
+// Central subscription check: getUserSubscription(userId)
+export async function getUserSubscription(userId) {
+  if (!userId) {
+    return getFreePlanObject();
+  }
   try {
-    plans = await getSubscriptionPlans();
-  } catch (e) {
-    console.error('Subscription plans failed:', e);
-    plans = [];
-  }
+    const subsRef = collection(db, 'users', userId, 'subscriptions');
+    const snap = await getDocs(subsRef);
+    
+    const now = new Date();
+    let activeSub = null;
+    let allSubs = [];
+    let hasExpired = false;
 
+    for (const docSnap of snap.docs) {
+      const subData = { id: docSnap.id, ...docSnap.data() };
+      
+      const expiryDateStr = subData.expiryDate || subData.validUntil;
+      if (subData.status === 'active' && expiryDateStr) {
+        const expiry = new Date(expiryDateStr);
+        if (expiry <= now) {
+          subData.status = 'expired';
+          hasExpired = true;
+          try {
+            await updateDoc(doc(db, 'users', userId, 'subscriptions', docSnap.id), {
+              status: 'expired',
+              updatedAt: now.toISOString()
+            });
+          } catch (e) {}
+        }
+      } else if (subData.status === 'expired') {
+        hasExpired = true;
+      }
 
-  if (user?.uid) {
+      allSubs.push(subData);
 
-    try {
-      userSub = await getUserSubscription(user.uid);
-    } catch (e) {
-      console.error(
-        'getUserSubscription failed:',
-        e
-      );
+      if (subData.status === 'active') {
+        const expiry = expiryDateStr ? new Date(expiryDateStr) : null;
+        if (!expiry || expiry > now) {
+          if (!activeSub || (expiry && activeSub.expiryDate && expiry > new Date(activeSub.expiryDate))) {
+            activeSub = subData;
+          }
+        }
+      }
     }
 
-
-    try {
-      activeSub = await getActiveSubscription(user.uid);
-    } catch (e) {
-      console.error(
-        'getActiveSubscription failed:',
-        e
-      );
-    }
-
-
-    /*
-      IMPORTANT:
-      Directly verify Free Plan from Firestore.
-      This fixes the green Activated button issue
-      even if subscription-service returns incomplete data.
-    */
-
-    directFreeSub =
-      await getFreePlanDirectly(user.uid);
-
-
-    /*
-      If direct Free Plan exists, use it as active subscription.
-    */
-
-    if (directFreeSub) {
-      activeSub = {
-        ...(activeSub || {}),
-        ...directFreeSub,
-        planId: 'free',
-        status: 'active',
-        isPremium: true
+    if (activeSub) {
+      const expiryDateStr = activeSub.expiryDate || activeSub.validUntil;
+      const expiry = expiryDateStr ? new Date(expiryDateStr) : null;
+      const diffTime = expiry ? expiry - now : 0;
+      const daysRemaining = expiry ? Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24))) : 0;
+      
+      return {
+        ...activeSub,
+        isPremium: true,
+        daysRemaining,
+        allSubscriptions: allSubs
       };
     }
-  }
 
-
-  /* -------------------------------------------------------
-     FALLBACK PLANS
-  ------------------------------------------------------- */
-
-  if (!Array.isArray(plans)) {
-    plans = [];
-  }
-
-
-  /* -------------------------------------------------------
-     RENDER HTML
-  ------------------------------------------------------- */
-
-  container.innerHTML = `
-
-    <!-- =====================================================
-         HERO
-    ====================================================== -->
-
-    <div style="
-      background:#FFFFFF;
-      border:1px solid var(--color-border);
-      border-radius:20px;
-      padding:32px 24px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.02);
-      margin-bottom:24px;
-      text-align:center;
-    ">
-
-      <span style="
-        display:inline-block;
-        padding:4px 12px;
-        background:#FEF2F2;
-        color:#DC2626;
-        border-radius:999px;
-        font-size:0.75rem;
-        font-weight:800;
-        text-transform:uppercase;
-        margin-bottom:12px;
-      ">
-        RankHub Pro Pass
-      </span>
-
-      <h1 style="
-        font-size:1.75rem;
-        font-weight:800;
-        color:#0F172A;
-        margin:0 0 8px;
-      ">
-        Unlimited Access to 500+ Test Series
-      </h1>
-
-      <p style="
-        font-size:0.9375rem;
-        color:#64748B;
-        margin:0 0 24px;
-      ">
-        Unlock all SSC, State Police, Banking, Railway & Teaching
-        exam mock papers & practice sets.
-      </p>
-
-
-      ${
-        user &&
-        userSub &&
-        userSub.status === 'active'
-          ? `
-
-            <div style="
-              background:#F8FAFC;
-              border:1px solid #E2E8F0;
-              border-radius:16px;
-              padding:20px;
-              margin-bottom:24px;
-              text-align:left;
-              display:grid;
-              grid-template-columns:
-                repeat(auto-fit,minmax(180px,1fr));
-              gap:16px;
-            ">
-
-              <div>
-                <div style="
-                  font-size:.75rem;
-                  color:#64748B;
-                  font-weight:700;
-                  text-transform:uppercase;
-                ">
-                  Plan
-                </div>
-
-                <div style="
-                  font-size:1.125rem;
-                  font-weight:800;
-                  color:#0F172A;
-                  margin-top:2px;
-                ">
-                  ${escapeHtml(
-                    userSub.planName ||
-                    userSub.name ||
-                    'Free'
-                  )}
-                </div>
-              </div>
-
-
-              <div>
-                <div style="
-                  font-size:.75rem;
-                  color:#64748B;
-                  font-weight:700;
-                  text-transform:uppercase;
-                ">
-                  Status
-                </div>
-
-                <div style="
-                  font-size:1.125rem;
-                  font-weight:800;
-                  color:#16A34A;
-                  margin-top:2px;
-                  text-transform:capitalize;
-                ">
-                  Active
-                </div>
-              </div>
-
-
-              <div>
-                <div style="
-                  font-size:.75rem;
-                  color:#64748B;
-                  font-weight:700;
-                  text-transform:uppercase;
-                ">
-                  Valid From
-                </div>
-
-                <div style="
-                  font-size:.9375rem;
-                  font-weight:700;
-                  color:#0F172A;
-                  margin-top:2px;
-                ">
-                  ${
-                    userSub.startDate
-                      ? formatNiceDate(
-                          userSub.startDateIso ||
-                          userSub.startDate
-                        )
-                      : '—'
-                  }
-                </div>
-              </div>
-
-
-              <div>
-                <div style="
-                  font-size:.75rem;
-                  color:#64748B;
-                  font-weight:700;
-                  text-transform:uppercase;
-                ">
-                  Valid Until
-                </div>
-
-                <div style="
-                  font-size:.9375rem;
-                  font-weight:700;
-                  color:#0F172A;
-                  margin-top:2px;
-                ">
-                  ${
-                    userSub.expiryDate
-                      ? formatNiceDate(
-                          userSub.expiryDate
-                        )
-                      : '—'
-                  }
-                </div>
-              </div>
-
-
-              <div>
-                <div style="
-                  font-size:.75rem;
-                  color:#64748B;
-                  font-weight:700;
-                  text-transform:uppercase;
-                ">
-                  Days Remaining
-                </div>
-
-                <div style="
-                  font-size:1.125rem;
-                  font-weight:800;
-                  color:#2563EB;
-                  margin-top:2px;
-                ">
-                  ${
-                    userSub.daysRemaining ??
-                    '—'
-                  }
-                  ${
-                    userSub.daysRemaining !== undefined
-                      ? ' Days'
-                      : ''
-                  }
-                </div>
-              </div>
-
-            </div>
-
-          `
-          : userSub &&
-            userSub.status === 'expired'
-          ? `
-
-            <div style="
-              background:#FFF1F2;
-              border:1px solid #FECDD3;
-              border-radius:16px;
-              padding:16px;
-              margin-bottom:24px;
-              font-size:.875rem;
-              color:#9F1239;
-              font-weight:600;
-            ">
-              Your Free Plan has expired.
-              Please activate a plan to continue access.
-            </div>
-
-          `
-          : `
-
-            <div style="
-              background:#FEF2F2;
-              border:1px solid #FCA5A5;
-              border-radius:16px;
-              padding:16px;
-              margin-bottom:24px;
-              font-size:.875rem;
-              color:#991B1B;
-              font-weight:600;
-            ">
-              ${
-                user
-                  ? 'No active subscription found. Activate the Free Plan below.'
-                  : 'Please sign in to view your personalized subscription status.'
-              }
-            </div>
-
-          `
+    // No active unexpired subscription found
+    const freeObj = getFreePlanObject();
+    if (hasExpired || allSubs.length > 0) {
+      const freeSub = allSubs.find(s => s.planId === 'free');
+      if (freeSub) {
+        freeObj.status = 'expired';
       }
-
-    </div>
-
-
-    <!-- =====================================================
-         PLANS
-    ====================================================== -->
-
-    <div style="margin-bottom:36px;">
-
-      <h2 style="
-        font-size:1.25rem;
-        font-weight:800;
-        color:#0F172A;
-        margin:0 0 16px;
-      ">
-        Choose Your Subscription Plan
-      </h2>
-
-
-      <div
-        id="plansGrid"
-        style="
-          display:grid;
-          grid-template-columns:
-            repeat(auto-fit,minmax(240px,1fr));
-          gap:20px;
-        "
-      >
-
-        ${
-          plans.length
-            ? plans.map(plan => {
-
-                /*
-                  IMPORTANT:
-                  Multiple checks are used here.
-                */
-
-                const normalActive =
-                  checkPlanIsActive(
-                    activeSub,
-                    userSub,
-                    plan.planId
-                  );
-
-
-                const freeDirectActive =
-                  plan.planId === 'free' &&
-                  !!directFreeSub;
-
-
-                const isActive =
-                  normalActive ||
-                  freeDirectActive;
-
-
-                return `
-
-                  <div
-                    data-plan-id="${escapeHtml(
-                      plan.planId
-                    )}"
-                    style="
-                      background:#FFFFFF;
-                      border:${
-                        plan.badge
-                          ? '2px solid #DC2626'
-                          : '1px solid var(--color-border)'
-                      };
-                      border-radius:16px;
-                      padding:24px;
-                      position:relative;
-                      box-shadow:
-                        0 4px 12px rgba(0,0,0,.03);
-                      display:flex;
-                      flex-direction:column;
-                      justify-content:space-between;
-                    "
-                  >
-
-                    ${
-                      plan.badge
-                        ? `
-                          <span style="
-                            position:absolute;
-                            top:-12px;
-                            right:20px;
-                            background:#DC2626;
-                            color:#FFFFFF;
-                            font-size:.7rem;
-                            font-weight:800;
-                            padding:3px 10px;
-                            border-radius:999px;
-                            text-transform:uppercase;
-                          ">
-                            ${escapeHtml(plan.badge)}
-                          </span>
-                        `
-                        : ''
-                    }
-
-
-                    <div>
-
-                      <div style="
-                        font-size:.8125rem;
-                        font-weight:800;
-                        color:#64748B;
-                        text-transform:uppercase;
-                        margin-bottom:4px;
-                      ">
-                        ${escapeHtml(plan.name)}
-                      </div>
-
-
-                      <div style="
-                        font-size:2rem;
-                        font-weight:800;
-                        color:#0F172A;
-                        margin-bottom:12px;
-                      ">
-                        ₹${escapeHtml(plan.price)}
-
-                        <span style="
-                          font-size:.875rem;
-                          color:#64748B;
-                          font-weight:600;
-                        ">
-                          /
-                          ${getDurationLabel(plan)}
-                        </span>
-                      </div>
-
-
-                      <ul style="
-                        list-style:none;
-                        padding:0;
-                        margin:0 0 20px;
-                        font-size:.875rem;
-                        color:#334155;
-                        display:flex;
-                        flex-direction:column;
-                        gap:8px;
-                      ">
-
-                        ${
-                          Array.isArray(plan.features)
-                            ? plan.features
-                                .map(
-                                  feature => `
-                                    <li style="
-                                      display:flex;
-                                      align-items:center;
-                                      gap:8px;
-                                    ">
-                                      <span style="
-                                        color:#16A34A;
-                                        font-weight:900;
-                                      ">
-                                        ✓
-                                      </span>
-
-                                      ${escapeHtml(feature)}
-                                    </li>
-                                  `
-                                )
-                                .join('')
-                            : ''
-                        }
-
-                      </ul>
-
-                    </div>
-
-
-                    <!-- BUTTON -->
-
-                    <div>
-
-                      ${
-                        isActive
-                          ? `
-
-                            <button
-                              type="button"
-                              class="plan-activated-btn"
-                              disabled
-                              style="
-                                width:100%;
-                                border-radius:10px;
-                                font-weight:800;
-                                background:#16A34A !important;
-                                color:#FFFFFF !important;
-                                border:1px solid #16A34A !important;
-                                padding:12px;
-                                cursor:default;
-                                opacity:1 !important;
-                              "
-                            >
-                              ✓ Activated
-                            </button>
-
-                          `
-                          : plan.price === 0
-                          ? `
-
-                            <button
-                              type="button"
-                              id="activateFreePlanBtn"
-                              class="btn-primary"
-                              style="
-                                width:100%;
-                                border-radius:10px;
-                                font-weight:700;
-                                background:#DC2626;
-                                color:#FFFFFF;
-                                padding:12px;
-                                cursor:pointer;
-                                border:none;
-                              "
-                            >
-                              Activate Free Plan
-                            </button>
-
-                          `
-                          : `
-
-                            <button
-                              type="button"
-                              class="btn-secondary"
-                              data-coming-plan="${escapeHtml(
-                                plan.name
-                              )}"
-                              style="
-                                width:100%;
-                                border-radius:10px;
-                                font-weight:700;
-                                background:#F1F5F9;
-                                color:#64748B;
-                                border:1px solid #CBD5E1;
-                                padding:12px;
-                                cursor:pointer;
-                              "
-                            >
-                              Coming Soon
-                            </button>
-
-                          `
-                      }
-
-                    </div>
-
-                  </div>
-
-                `;
-
-              }).join('')
-            : `
-
-              <div style="
-                background:#FFFFFF;
-                border:1px solid #E2E8F0;
-                border-radius:16px;
-                padding:30px;
-                text-align:center;
-                color:#64748B;
-              ">
-                No subscription plans available.
-              </div>
-
-            `
-        }
-
-      </div>
-
-    </div>
-
-
-    <!-- =====================================================
-         HISTORY
-    ====================================================== -->
-
-    ${
-      userSub &&
-      Array.isArray(userSub.allSubscriptions) &&
-      userSub.allSubscriptions.length > 0
-        ? `
-
-          <div style="
-            background:#FFFFFF;
-            border:1px solid var(--color-border);
-            border-radius:16px;
-            padding:24px;
-            box-shadow:0 2px 8px rgba(0,0,0,.02);
-            margin-bottom:36px;
-          ">
-
-            <h2 style="
-              font-size:1.25rem;
-              font-weight:800;
-              color:#0F172A;
-              margin:0 0 16px;
-            ">
-              Subscription History
-            </h2>
-
-
-            <div style="
-              display:flex;
-              flex-direction:column;
-              gap:12px;
-            ">
-
-              ${userSub.allSubscriptions
-                .map(sub => `
-
-                  <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                    padding:16px;
-                    background:#F8FAFC;
-                    border:1px solid #E2E8F0;
-                    border-radius:12px;
-                    flex-wrap:wrap;
-                    gap:12px;
-                  ">
-
-                    <div>
-
-                      <div style="
-                        font-weight:800;
-                        color:#0F172A;
-                        font-size:1rem;
-                      ">
-                        ${escapeHtml(
-                          sub.planName ||
-                          sub.planId ||
-                          'Plan'
-                        )}
-                      </div>
-
-
-                      <div style="
-                        font-size:.8125rem;
-                        color:#64748B;
-                        margin-top:2px;
-                      ">
-                        ${
-                          formatNiceDate(
-                            sub.startDateIso ||
-                            sub.startDate ||
-                            sub.validFromIso
-                          )
-                        }
-
-                        →
-
-                        ${
-                          formatNiceDate(
-                            sub.expiryDate ||
-                            sub.validUntil
-                          )
-                        }
-                      </div>
-
-                    </div>
-
-
-                    <div style="
-                      display:flex;
-                      align-items:center;
-                      gap:12px;
-                    ">
-
-                      <span style="
-                        font-weight:800;
-                        color:#0F172A;
-                      ">
-                        ₹${escapeHtml(
-                          sub.price || 0
-                        )}
-                      </span>
-
-
-                      <span style="
-                        padding:4px 10px;
-                        border-radius:999px;
-                        font-size:.75rem;
-                        font-weight:800;
-                        text-transform:uppercase;
-
-                        background:${
-                          sub.status === 'active'
-                            ? '#DCFCE7'
-                            : '#F1F5F9'
-                        };
-
-                        color:${
-                          sub.status === 'active'
-                            ? '#16A34A'
-                            : '#64748B'
-                        };
-                      ">
-                        ${
-                          sub.status === 'active'
-                            ? 'Active'
-                            : 'Expired'
-                        }
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                `)
-                .join('')}
-
-            </div>
-
-          </div>
-
-        `
-        : ''
     }
-
-  `;
-
-
-  /* =======================================================
-     COMING SOON BUTTONS
-  ======================================================== */
-
-  container
-    .querySelectorAll('[data-coming-plan]')
-    .forEach(button => {
-
-      button.addEventListener('click', () => {
-
-        const planName =
-          button.getAttribute(
-            'data-coming-plan'
-          ) || 'This';
-
-        alert(
-          `${planName} plan is coming soon.`
-        );
-
-      });
-
-    });
-
-
-  /* =======================================================
-     FREE PLAN BUTTON
-  ======================================================== */
-
-  const activateBtn =
-    container.querySelector(
-      '#activateFreePlanBtn'
-    );
-
-
-  if (activateBtn) {
-
-    activateBtn.addEventListener(
-      'click',
-      async () => {
-
-        await activateFreePlan(
-          container,
-          activateBtn
-        );
-
-      }
-    );
-
+    freeObj.allSubscriptions = allSubs;
+    return freeObj;
+  } catch (err) {
+    console.error('Error getting user subscription:', err);
+    return getFreePlanObject();
   }
 }
 
+function getFreePlanObject() {
+  return {
+    planId: 'free',
+    planName: 'Free',
+    name: 'Free',
+    price: 0,
+    durationDays: 7,
+    status: 'inactive',
+    startDate: null,
+    expiryDate: null,
+    daysRemaining: 0,
+    isPremium: false,
+    source: 'system',
+    allSubscriptions: []
+  };
+}
 
-/* =========================================================
-   ACTIVATE FREE PLAN
-========================================================= */
-
-async function activateFreePlan(
-  container,
-  button
-) {
-
-  let currentUser =
-    await getLoggedInUser();
-
-
-  /* -------------------------------------------------------
-     LOGIN CHECK
-  ------------------------------------------------------- */
-
-  if (
-    !currentUser ||
-    !currentUser.uid
-  ) {
-
-    alert(
-      'Please sign in to activate the Free Plan.'
-    );
-
-    window.location.href =
-      './signin.html';
-
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     PREVENT DOUBLE CLICK
-  ------------------------------------------------------- */
-
-  if (button.dataset.loading === 'true') {
-    return;
-  }
-
-  button.dataset.loading = 'true';
-
-  button.disabled = true;
-
-  button.textContent =
-    'Activating...';
-
-  button.style.opacity = '0.7';
-
-
+// Admin manual grant subscription
+export async function adminGrantSubscription(targetUserId, planId, startDateStr, expiryDateStr, adminNote = '', planName = '', price = 0, durationDays = 365) {
   try {
-
-    const now = new Date();
-
-
-    /*
-      FREE PLAN = 7 DAYS
-    */
-
-    const expiry =
-      new Date(
-        now.getTime() +
-        7 *
-        24 *
-        60 *
-        60 *
-        1000
-      );
-
-
-    const uid =
-      currentUser.uid;
-
-
-    const subscriptionData = {
-
-      userId: uid,
-
-      planId: 'free',
-
-      planName: 'Free',
-
-      name: 'Free',
-
-      price: 0,
-
-      durationDays: 7,
-
+    const subId = 'sub_' + Date.now();
+    const subData = {
+      subscriptionId: subId,
+      userId: targetUserId,
+      planId,
+      planName: planName || planId,
+      price: Number(price),
+      durationDays: Number(durationDays),
+      startDate: startDateStr,
+      expiryDate: expiryDateStr,
       status: 'active',
-
-      source: 'free_launch',
-
-      isPremium: true,
-
-      isActive: true,
-
-      validFrom: serverTimestamp(),
-
-      validFromIso:
-        now.toISOString(),
-
-      startDate:
-        serverTimestamp(),
-
-      startDateIso:
-        now.toISOString(),
-
-      validUntil:
-        expiry.toISOString(),
-
-      expiryDate:
-        expiry.toISOString(),
-
-      createdAt:
-        serverTimestamp(),
-
-      updatedAt:
-        serverTimestamp()
-
+      source: 'admin',
+      paymentId: null,
+      adminNote: adminNote || 'Granted by Admin',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-
-    /* -----------------------------------------------------
-       SAVE ACTIVE FREE SUBSCRIPTION
-    ----------------------------------------------------- */
-
-    await setDoc(
-      doc(
-        db,
-        'users',
-        uid,
-        'subscriptions',
-        'free_active'
-      ),
-      subscriptionData,
-      {
-        merge: true
-      }
-    );
-
-
-    /* -----------------------------------------------------
-       LOCAL CACHE
-    ----------------------------------------------------- */
-
-    localStorage.setItem(
-      'rankhub_free_plan_activated_' + uid,
-      'true'
-    );
-
-
-    localStorage.setItem(
-      'rankhub_free_plan_expiry_' + uid,
-      expiry.toISOString()
-    );
-
-
-    /* -----------------------------------------------------
-       IMPORTANT:
-       Change button immediately.
-    ----------------------------------------------------- */
-
-    button.textContent =
-      '✓ Activated';
-
-    button.style.background =
-      '#16A34A';
-
-    button.style.color =
-      '#FFFFFF';
-
-    button.style.border =
-      '1px solid #16A34A';
-
-    button.style.opacity =
-      '1';
-
-    button.style.cursor =
-      'default';
-
-    button.disabled =
-      true;
-
-
-    /*
-      Small delay, then reload page data.
-      This makes sure Firestore + subscription service
-      are both synchronized.
-    */
-
-    await new Promise(resolve =>
-      setTimeout(resolve, 300)
-    );
-
-
-    alert(
-      'Free Plan activated successfully! Full RankHub access is now unlocked for 7 days.'
-    );
-
-
-    /*
-      Re-render page.
-      Direct Firestore check will detect
-      free_active and keep button green.
-    */
-
-    await renderPassPage(container);
-
-
-  } catch (error) {
-
-    console.error(
-      'Free Plan activation error:',
-      error
-    );
-
-
-    /*
-      Try again with plain ISO strings.
-      This is a fallback for environments where
-      serverTimestamp causes an issue.
-    */
-
-    try {
-
-      const now =
-        new Date();
-
-      const expiry =
-        new Date(
-          now.getTime() +
-          7 *
-          24 *
-          60 *
-          60 *
-          1000
-        );
-
-
-      const uid =
-        currentUser.uid;
-
-
-      await setDoc(
-        doc(
-          db,
-          'users',
-          uid,
-          'subscriptions',
-          'free_active'
-        ),
-        {
-          userId: uid,
-          planId: 'free',
-          planName: 'Free',
-          name: 'Free',
-          price: 0,
-          durationDays: 7,
-          status: 'active',
-          source: 'free_launch',
-          isPremium: true,
-          isActive: true,
-
-          validFromIso:
-            now.toISOString(),
-
-          startDateIso:
-            now.toISOString(),
-
-          validUntil:
-            expiry.toISOString(),
-
-          expiryDate:
-            expiry.toISOString(),
-
-          updatedAt:
-            now.toISOString(),
-
-          createdAt:
-            now.toISOString()
-        },
-        {
-          merge: true
-        }
-      );
-
-
-      localStorage.setItem(
-        'rankhub_free_plan_activated_' + uid,
-        'true'
-      );
-
-
-      localStorage.setItem(
-        'rankhub_free_plan_expiry_' + uid,
-        expiry.toISOString()
-      );
-
-
-      /*
-        Immediate green state.
-      */
-
-      button.textContent =
-        '✓ Activated';
-
-      button.style.background =
-        '#16A34A';
-
-      button.style.color =
-        '#FFFFFF';
-
-      button.style.border =
-        '1px solid #16A34A';
-
-      button.style.opacity =
-        '1';
-
-      button.disabled =
-        true;
-
-
-      alert(
-        'Free Plan activated successfully! Full RankHub access is now unlocked for 7 days.'
-      );
-
-
-      await renderPassPage(container);
-
-
-    } catch (fallbackError) {
-
-      console.error(
-        'Free Plan fallback failed:',
-        fallbackError
-      );
-
-
-      button.disabled =
-        false;
-
-      button.dataset.loading =
-        'false';
-
-      button.textContent =
-        'Activate Free Plan';
-
-      button.style.background =
-        '#DC2626';
-
-      button.style.opacity =
-        '1';
-
-
-      alert(
-        'Free Plan activate nahi ho paya. Please check your Firebase Firestore rules.'
-      );
-
-    }
-
+    const subRef = doc(db, 'users', targetUserId, 'subscriptions', subId);
+    await setDoc(subRef, subData);
+    return true;
+  } catch (err) {
+    console.error('Error granting subscription:', err);
+    throw err;
+  }
+}
+
+// Admin revoke subscription
+export async function adminRevokeSubscription(targetUserId, subscriptionId) {
+  try {
+    const subRef = doc(db, 'users', targetUserId, 'subscriptions', subscriptionId);
+    await updateDoc(subRef, {
+      status: 'expired',
+      updatedAt: new Date().toISOString(),
+      adminNote: 'Revoked by Admin'
+    });
+    return true;
+  } catch (err) {
+    console.error('Error revoking subscription:', err);
+    throw err;
+  }
+}
+
+// Payment gateway preparation (future integration)
+export function preparePaymentGatewayCheckout(plan, user) {
+  // Architecture placeholder for Razorpay / Stripe / Paytm gateway integration
+  console.log('Payment gateway checkout prepared for plan:', plan, 'user:', user);
+  return {
+    gatewayReady: true,
+    orderId: 'order_' + Date.now(),
+    amount: plan.price * 100,
+    currency: 'INR',
+    notes: { planId: plan.planId, userId: user ? user.uid : '' }
+  };
+}
+
+// Centralized access check function: canAccessContent(userOrUserId, contentType, itemIndex)
+export async function canAccessContent(userOrUserId, contentType, itemIndex) {
+  if (itemIndex === 0) {
+    return true; // #1 item is always free
   }
 
+  let userId = null;
+  if (typeof userOrUserId === 'string') {
+    userId = userOrUserId;
+  } else if (userOrUserId && userOrUserId.uid) {
+    userId = userOrUserId.uid;
+  } else if (auth.currentUser) {
+    userId = auth.currentUser.uid;
+  } else {
+    try {
+      const saved = localStorage.getItem('rankhub_user');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u && u.uid) userId = u.uid;
+      }
+    } catch (e) {}
+  }
+
+  if (!userId) {
+    return false;
+  }
+
+  const sub = await getUserSubscription(userId);
+  return sub && sub.isPremium === true;
 }
+
+// Global RankHub Pass Prompt Modal helper
+export function showRankHubPassModal(contentTitle = 'Locked Content') {
+  let modal = document.getElementById('rankhubPassGlobalModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'rankhubPassGlobalModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;';
+    modal.innerHTML = `
+      <div style="background:#FFFFFF;width:100%;max-width:460px;border-radius:20px;padding:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);position:relative;text-align:center;">
+        <button type="button" id="closeRankhubModalBtn" style="position:absolute;top:16px;right:16px;background:#F1F5F9;border:none;width:32px;height:32px;border-radius:50%;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748B;">&times;</button>
+        <div style="width:56px;height:56px;background:#FEF2F2;color:#DC2626;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <span style="display:inline-block;padding:4px 12px;background:#FEF2F2;color:#DC2626;border-radius:999px;font-size:0.75rem;font-weight:800;text-transform:uppercase;margin-bottom:8px;">RankHub Pass Protected</span>
+        <h3 style="font-size:1.375rem;font-weight:800;color:#0F172A;margin-bottom:6px;">Unlock this content with RankHub Pass</h3>
+        <p style="font-size:0.875rem;color:#64748B;margin-bottom:20px;" id="rankhubModalContentName">Accessing: ${contentTitle}</p>
+        
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:16px;margin-bottom:24px;text-align:left;">
+          <div style="font-size:0.8125rem;font-weight:800;color:#0F172A;margin-bottom:8px;">What you get with RankHub Pass Pro:</div>
+          <ul style="list-style:none;padding:0;margin:0;font-size:0.8125rem;color:#334155;display:flex;flex-direction:column;gap:6px;">
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Unlimited Mock Tests & Re-attempts</li>
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>All Practice Sets & PYQ Papers</li>
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Study Notes & Revision PDFs</li>
+          </ul>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-around;font-size:0.75rem;font-weight:700;color:#64748B;">
+            <span>1 Week — ₹29</span>
+            <span>6 Months — ₹199</span>
+            <span style="color:#DC2626;">1 Year — ₹299</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="./rankhub-pass.html" style="background:#DC2626;color:#FFFFFF;padding:12px;border-radius:10px;font-weight:800;text-decoration:none;display:block;text-align:center;">Get RankHub Pass</a>
+          <button type="button" id="continueFreeModalBtn" style="background:#F1F5F9;color:#0F172A;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;">Continue with Free Content</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+      modal.style.display = 'none';
+    };
+
+    modal.querySelector('#closeRankhubModalBtn').onclick = closeModal;
+    modal.querySelector('#continueFreeModalBtn').onclick = closeModal;
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
+  } else {
+    const nameEl = modal.querySelector('#rankhubModalContentName');
+    if (nameEl) nameEl.textContent = `Accessing: ${contentTitle}`;
+    modal.style.display = 'flex';
+  }
+}
+
