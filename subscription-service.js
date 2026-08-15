@@ -1,6 +1,9 @@
 // ============================================================
 // RANKHUB - SUBSCRIPTION SERVICE
 // subscription-service.js
+// FINAL UPDATED VERSION
+// ADMIN + USER WEBSITE USE SAME COLLECTION:
+// subscriptionPlans
 // ============================================================
 
 import { db, auth } from './firebase.js';
@@ -41,6 +44,10 @@ function nowISOString() {
   return new Date().toISOString();
 }
 
+
+// ============================================================
+// CURRENT USER ID
+// ============================================================
 
 function getCurrentUserId() {
 
@@ -84,20 +91,16 @@ function convertDate(value) {
     return null;
   }
 
-  // Firestore Timestamp
   if (
     typeof value.toDate === 'function'
   ) {
-
     return value.toDate();
   }
 
-  // JavaScript Date
   if (value instanceof Date) {
     return value;
   }
 
-  // Timestamp-like object
   if (
     typeof value === 'object' &&
     typeof value.seconds === 'number'
@@ -170,7 +173,7 @@ function calculateDaysRemaining(value) {
 
 
 // ============================================================
-// PLAN DURATION HELPERS
+// DURATION HELPERS
 // ============================================================
 
 function calculateDurationDays(
@@ -211,7 +214,47 @@ function calculateDurationDays(
 
 
 // ============================================================
-// FREE USER OBJECT
+// GET DURATION UNIT
+// ============================================================
+
+function getDurationUnit(
+  durationDays
+) {
+
+  const days =
+    Number(durationDays) || 0;
+
+  if (days === 1) {
+    return 'day';
+  }
+
+  if (
+    days > 0 &&
+    days % 365 === 0
+  ) {
+    return 'year';
+  }
+
+  if (
+    days > 0 &&
+    days % 30 === 0
+  ) {
+    return 'month';
+  }
+
+  if (
+    days > 0 &&
+    days % 7 === 0
+  ) {
+    return 'week';
+  }
+
+  return 'day';
+}
+
+
+// ============================================================
+// FREE PLAN
 // ============================================================
 
 function getFreePlanObject(
@@ -268,7 +311,6 @@ export async function checkIsAdmin(user) {
     return false;
   }
 
-  // Existing RankHub admin
   if (
     user.email ===
     'dk9665676@gmail.com'
@@ -314,7 +356,7 @@ export async function checkIsAdmin(user) {
 
 
 // ============================================================
-// SYSTEM SETTINGS
+// GET SYSTEM SETTINGS
 // ============================================================
 
 export async function getSystemSettings(
@@ -450,13 +492,20 @@ export async function updateSystemSettings(
 
 // ============================================================
 // GET SUBSCRIPTION PLANS
+// ============================================================
 // IMPORTANT:
-// Admin Panel uses collection "plans"
+// ADMIN PANEL + USER WEBSITE
+// BOTH USE:
+// subscriptionPlans
 // ============================================================
 
 export async function getSubscriptionPlans(
   forceRefresh = false
 ) {
+
+  // ----------------------------------------------------------
+  // CACHE
+  // ----------------------------------------------------------
 
   if (
     cachedSubscriptionPlans &&
@@ -466,35 +515,137 @@ export async function getSubscriptionPlans(
     return cachedSubscriptionPlans;
   }
 
+
   try {
+
+    // --------------------------------------------------------
+    // SAME COLLECTION FOR ADMIN + USER
+    // --------------------------------------------------------
 
     const plansRef =
       collection(
         db,
-        'plans'
+        'subscriptionPlans'
       );
+
 
     const snapshot =
       await getDocs(
         plansRef
       );
 
+
     const plans = [];
+
+
+    // --------------------------------------------------------
+    // READ PLANS
+    // --------------------------------------------------------
 
     snapshot.forEach(
       planDoc => {
 
         const data =
-          planDoc.data();
+          planDoc.data() || {};
 
-        const duration =
+
+        // ----------------------------------------------------
+        // PLAN ID
+        // ----------------------------------------------------
+
+        const planId =
+          data.planId ||
+          planDoc.id;
+
+
+        // ----------------------------------------------------
+        // NAME
+        // ----------------------------------------------------
+
+        const name =
+          data.name ||
+          data.planName ||
+          'Unnamed Plan';
+
+
+        // ----------------------------------------------------
+        // PRICE
+        // ----------------------------------------------------
+
+        const price =
           Number(
-            data.duration || 1
+            data.price ?? 0
           );
 
-        const durationUnit =
-          data.durationUnit ||
-          'month';
+
+        // ----------------------------------------------------
+        // CURRENCY
+        // ----------------------------------------------------
+
+        const currency =
+          data.currency ||
+          'INR';
+
+
+        // ----------------------------------------------------
+        // DURATION
+        // ----------------------------------------------------
+
+        let durationDays =
+          Number(
+            data.durationDays ?? 0
+          );
+
+
+        // If Admin has duration + durationUnit
+        // instead of durationDays
+        if (
+          durationDays <= 0 &&
+          data.duration
+        ) {
+
+          durationDays =
+            calculateDurationDays(
+              data.duration,
+              data.durationUnit
+            );
+        }
+
+
+        // ----------------------------------------------------
+        // STATUS
+        // ----------------------------------------------------
+
+        const active =
+          data.active !== false &&
+          data.status !== 'inactive' &&
+          data.status !== 'archived';
+
+
+        const status =
+          data.status ||
+          (
+            active
+              ? 'active'
+              : 'archived'
+          );
+
+
+        // ----------------------------------------------------
+        // SORT ORDER
+        // ----------------------------------------------------
+
+        const sortOrder =
+          Number(
+            data.sortOrder ??
+            data.displayOrder ??
+            999
+          );
+
+
+        // ----------------------------------------------------
+        // NORMALIZED PLAN
+        // ----------------------------------------------------
 
         plans.push({
 
@@ -502,41 +653,29 @@ export async function getSubscriptionPlans(
           id:
             planDoc.id,
 
-          // Existing planId if present,
-          // otherwise Firestore ID
-          planId:
-            data.planId ||
-            planDoc.id,
+          // Actual plan ID
+          planId,
 
-          name:
-            data.name ||
-            'Unnamed Plan',
+          name,
 
           planName:
             data.planName ||
-            data.name ||
-            'Unnamed Plan',
+            name,
 
-          price:
-            Number(
-              data.price || 0
-            ),
+          price,
 
-          currency:
-            data.currency ||
-            'INR',
+          currency,
 
-          duration,
+          durationDays,
 
-          durationUnit,
+          duration:
+            data.duration ??
+            durationDays,
 
-          durationDays:
-            Number(
-              data.durationDays
-            ) ||
-            calculateDurationDays(
-              duration,
-              durationUnit
+          durationUnit:
+            data.durationUnit ||
+            getDurationUnit(
+              durationDays
             ),
 
           description:
@@ -550,31 +689,14 @@ export async function getSubscriptionPlans(
               ? data.features
               : [],
 
-          status:
-            data.status ||
-            (
-              data.active === false
-                ? 'inactive'
-                : 'active'
-            ),
+          status,
 
-          active:
-            data.status === 'active' ||
-            data.active === true,
+          active,
 
           displayOrder:
-            Number(
-              data.displayOrder ??
-              data.sortOrder ??
-              999
-            ),
+            sortOrder,
 
-          sortOrder:
-            Number(
-              data.sortOrder ??
-              data.displayOrder ??
-              999
-            ),
+          sortOrder,
 
           badge:
             data.badge ||
@@ -589,30 +711,43 @@ export async function getSubscriptionPlans(
             null
 
         });
+
       }
     );
 
 
     // --------------------------------------------------------
-    // SORT BY ADMIN PANEL DISPLAY ORDER
+    // SORT
     // --------------------------------------------------------
 
     plans.sort(
       (a, b) =>
-        a.displayOrder -
-        b.displayOrder
+        Number(a.sortOrder || 999) -
+        Number(b.sortOrder || 999)
     );
 
+
+    // --------------------------------------------------------
+    // CACHE
+    // --------------------------------------------------------
 
     cachedSubscriptionPlans =
       plans;
 
+
+    console.log(
+      'RankHub subscription plans loaded from subscriptionPlans:',
+      plans
+    );
+
+
     return plans;
+
 
   } catch (error) {
 
     console.error(
-      'Error fetching plans:',
+      'Error fetching subscription plans:',
       error
     );
 
@@ -756,23 +891,26 @@ export async function getUserSubscription(
         'subscriptions'
       );
 
+
     const snapshot =
       await getDocs(
         subscriptionsRef
       );
+
 
     const allSubscriptions = [];
 
     let activePaidSubscription =
       null;
 
+
     const now =
       new Date();
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // READ ALL SUBSCRIPTIONS
-    // ========================================================
+    // --------------------------------------------------------
 
     for (
       const subscriptionDoc
@@ -781,6 +919,7 @@ export async function getUserSubscription(
 
       const originalData =
         subscriptionDoc.data();
+
 
       const subscription = {
 
@@ -823,7 +962,6 @@ export async function getUserSubscription(
             'expired';
 
 
-          // Update Firestore
           try {
 
             await updateDoc(
@@ -862,7 +1000,7 @@ export async function getUserSubscription(
 
 
       // ------------------------------------------------------
-      // ONLY PAID ACTIVE SUBSCRIPTIONS
+      // PAID ACTIVE SUBSCRIPTION
       // ------------------------------------------------------
 
       if (
@@ -891,7 +1029,6 @@ export async function getUserSubscription(
         }
 
 
-        // First valid subscription
         if (
           !activePaidSubscription
         ) {
@@ -903,15 +1040,11 @@ export async function getUserSubscription(
         }
 
 
-        // ----------------------------------------------------
-        // If multiple subscriptions exist,
-        // choose the one with later expiry
-        // ----------------------------------------------------
-
         const currentExpiryValue =
           activePaidSubscription.expiryDate ||
           activePaidSubscription.validUntil ||
           null;
+
 
         const currentExpiry =
           currentExpiryValue
@@ -937,9 +1070,9 @@ export async function getUserSubscription(
     }
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // PAID SUBSCRIPTION FOUND
-    // ========================================================
+    // --------------------------------------------------------
 
     if (
       activePaidSubscription
@@ -974,9 +1107,9 @@ export async function getUserSubscription(
     }
 
 
-    // ========================================================
-    // NO PAID SUBSCRIPTION
-    // ========================================================
+    // --------------------------------------------------------
+    // FREE SUBSCRIPTION
+    // --------------------------------------------------------
 
     const freeSubscription =
       allSubscriptions.find(
@@ -1013,13 +1146,14 @@ export async function getUserSubscription(
     }
 
 
-    // ========================================================
-    // FALLBACK FREE USER
-    // ========================================================
+    // --------------------------------------------------------
+    // FALLBACK
+    // --------------------------------------------------------
 
     return getFreePlanObject(
       allSubscriptions
     );
+
 
   } catch (error) {
 
@@ -1079,11 +1213,12 @@ export async function adminGrantSubscription(
 
 
     // --------------------------------------------------------
-    // Try to get latest plan data
+    // GET LATEST PLAN
     // --------------------------------------------------------
 
     let latestPlan =
       null;
+
 
     try {
 
@@ -1131,8 +1266,6 @@ export async function adminGrantSubscription(
       userId:
         targetUserId,
 
-      // IMPORTANT:
-      // This should match Firestore plan ID
       planId,
 
       planName:
@@ -1310,6 +1443,7 @@ export function preparePaymentGatewayCheckout(
       ) * 100,
 
     currency:
+      plan.currency ||
       'INR',
 
     notes: {
@@ -1336,10 +1470,6 @@ export async function canAccessContent(
   contentType = '',
   itemIndex = 0
 ) {
-
-  // ----------------------------------------------------------
-  // Resolve User ID
-  // ----------------------------------------------------------
 
   let userId =
     null;
@@ -1383,14 +1513,6 @@ export async function canAccessContent(
     await getSystemSettings();
 
 
-  /*
-   * Launch Mode:
-   *
-   * subscriptionSystemEnabled = false
-   *
-   * Everything remains accessible.
-   */
-
   if (
     settings.subscriptionSystemEnabled !==
     true
@@ -1401,11 +1523,10 @@ export async function canAccessContent(
 
 
   // ----------------------------------------------------------
-  // Subscription Mode
+  // SUBSCRIPTION MODE
   // ----------------------------------------------------------
 
   if (!userId) {
-
     return false;
   }
 
@@ -1827,6 +1948,7 @@ export async function refreshSubscriptionData() {
 
   clearSubscriptionCache();
 
+
   const [
     settings,
     plans
@@ -1886,25 +2008,30 @@ export async function debugSubscription(
     '========== RANKHUB SUBSCRIPTION DEBUG =========='
   );
 
+
   console.log(
     'User ID:',
     resolvedUserId
   );
+
 
   console.log(
     'System Settings:',
     settings
   );
 
+
   console.log(
-    'Plans:',
+    'Plans from subscriptionPlans:',
     plans
   );
+
 
   console.log(
     'Subscription:',
     subscription
   );
+
 
   console.log(
     '================================================'
@@ -1924,3 +2051,23 @@ export async function debugSubscription(
 
   };
 }
+
+
+// ============================================================
+// FORCE REFRESH PLANS
+// ============================================================
+
+export async function refreshSubscriptionPlans() {
+
+  cachedSubscriptionPlans =
+    null;
+
+  return await getSubscriptionPlans(
+    true
+  );
+}
+
+
+// ============================================================
+// END
+// ============================================================
