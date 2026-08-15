@@ -1,1634 +1,388 @@
-// ============================================================
-// RankHub - Subscription Service
-// ============================================================
-
 import { db, auth } from './firebase.js';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, orderBy, deleteDoc } from "firebase/firestore";
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  getDocs
-} from 'firebase/firestore';
-
-
-// ============================================================
-// DEFAULT SYSTEM SETTINGS
-// ============================================================
-
+// Default System Configuration
 const DEFAULT_SETTINGS = {
-  subscriptionSystemEnabled: false,
+  subscriptionSystemEnabled: false, // Free Launch Mode is active by default
   updatedAt: new Date().toISOString()
 };
 
-
-// ============================================================
-// DEFAULT PLANS
-// ============================================================
-
+// Default Subscription Plans
 export const DEFAULT_PLANS = [
   {
     planId: 'free',
     name: 'Free',
     price: 0,
     durationDays: 99999,
-    features: [
-      'Access to Free Mock Tests',
-      'Basic Practice Bank',
-      'Previous Year Question papers preview'
-    ],
+    features: ['Access to Free Mock Tests', 'Basic Practice Bank', 'Previous Year Question papers preview'],
     active: true,
     sortOrder: 1,
     badge: ''
   },
-
   {
-    planId: '1week',
-    name: '1 Week',
-    price: 29,
-    durationDays: 7,
-    features: [
-      'Unlimited Mock Tests for 7 Days',
-      'Detailed Performance Analysis',
-      'All Practice Sets'
-    ],
-    active: true,
+    planId: '1week', name: '1 Week', price: 29, durationDays: 7, features: ['Unlimited Mock Tests for 7 Days', 'Detailed Performance Analysis', 'All Practice Sets'], active: false,
     sortOrder: 2,
     badge: ''
   },
-
   {
-    planId: '6months',
-    name: '6 Months',
-    price: 199,
-    durationDays: 180,
-    features: [
-      'Unlimited Access for 180 Days',
-      'All Exam Categories',
-      'Priority Support & Solutions'
-    ],
-    active: true,
+    planId: '6months', name: '6 Months', price: 199, durationDays: 180, features: ['Unlimited Access for 180 Days', 'All Exam Categories', 'Priority Support & Solutions'], active: false,
     sortOrder: 3,
     badge: ''
   },
-
   {
-    planId: '1year',
-    name: '1 Year',
-    price: 299,
-    durationDays: 365,
-    features: [
-      'Full Year Access (365 Days)',
-      'All Exams & Test Series',
-      'Best Value for Serious Aspirants'
-    ],
-    active: true,
+    planId: '1year', name: '1 Year', price: 299, durationDays: 365, features: ['Full Year Access (365 Days)', 'All Exams & Test Series', 'Best Value for Serious Aspirants'], active: false,
     sortOrder: 4,
     badge: 'Best Value'
   }
 ];
 
-
-// ============================================================
-// CACHE
-// ============================================================
-
-let cachedSystemSettings = null;
-let cachedSubscriptionPlans = null;
-
-
-// ============================================================
-// BASIC HELPERS
-// ============================================================
-
-function nowISO() {
-  return new Date().toISOString();
+// Check if current user is admin
+export async function checkIsAdmin(user) {
+  if (!user) return false;
+  if (user.email === 'dk9665676@gmail.com') return true;
+  try {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists() && (userSnap.data().role === 'admin' || userSnap.data().isAdmin === true)) {
+      return true;
+    }
+  } catch (err) {
+    console.error('Error checking admin status:', err);
+  }
+  return false;
 }
 
-
-// ============================================================
-// FIRESTORE DATE NORMALIZER
-// Handles:
-// - Firestore Timestamp
-// - Date
-// - ISO String
-// - Number
-// ============================================================
-
-function normalizeDate(value) {
-
-  if (!value) {
-    return null;
+let cachedSystemSettings = null;
+// Get system settings
+export async function getSystemSettings() {
+  if (cachedSystemSettings) return cachedSystemSettings;
+  try {
+    const docRef = doc(db, 'settings', 'system');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      cachedSystemSettings = snap.data();
+      return cachedSystemSettings;
+    } else {
+      // Initialize if missing
+      await setDoc(docRef, DEFAULT_SETTINGS);
+      cachedSystemSettings = DEFAULT_SETTINGS;
+      return DEFAULT_SETTINGS;
+    }
+  } catch (err) {
+    console.error('Error getting system settings:', err);
+    return DEFAULT_SETTINGS;
   }
+}
 
-  // Native JS Date
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime())
-      ? null
-      : value;
+// Update system settings (Admin only)
+export async function updateSystemSettings(newSettings) {
+  try {
+    const docRef = doc(db, 'settings', 'system');
+    await setDoc(docRef, { ...newSettings, updatedAt: new Date().toISOString() }, { merge: true });
+    cachedSystemSettings = { ...(cachedSystemSettings || DEFAULT_SETTINGS), ...newSettings };
+    return true;
+  } catch (err) {
+    console.error('Error updating system settings:', err);
+    throw err;
   }
+}
 
-  // Firestore Timestamp
-  if (
-    typeof value === 'object' &&
-    typeof value.toDate === 'function'
-  ) {
-    try {
-      const date = value.toDate();
+let cachedSubscriptionPlans = null;
+// Get all subscription plans
+export async function getSubscriptionPlans() {
+  if (cachedSubscriptionPlans) return cachedSubscriptionPlans;
+  try {
+    const colRef = collection(db, 'subscriptionPlans');
+    const snap = await getDocs(colRef);
+    if (snap.empty) {
+      // Seed default plans if none exist
+      for (const plan of DEFAULT_PLANS) {
+        await setDoc(doc(db, 'subscriptionPlans', plan.planId), {
+          ...plan,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      cachedSubscriptionPlans = DEFAULT_PLANS;
+      return DEFAULT_PLANS;
+    }
+    const plans = [];
+    snap.forEach(docSnap => {
+      plans.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    cachedSubscriptionPlans = plans.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return cachedSubscriptionPlans;
+  } catch (err) {
+    console.error('Error fetching subscription plans:', err);
+    return DEFAULT_PLANS;
+  }
+}
 
-      return Number.isNaN(date.getTime())
-        ? null
-        : date;
-    } catch (error) {
-      console.warn('Could not convert Firestore Timestamp:', error);
-      return null;
+export async function getActiveSubscription(userId) {
+  const sub = await getUserSubscription(userId);
+  if (sub && sub.status === 'active') {
+    const now = new Date();
+    const expiryDateStr = sub.expiryDate || sub.validUntil;
+    if (expiryDateStr) {
+      const expiry = new Date(expiryDateStr);
+      if (expiry > now) return sub;
+    } else {
+      return sub;
     }
   }
-
-  // Firestore Timestamp-like object
-  if (
-    typeof value === 'object' &&
-    typeof value.seconds === 'number'
-  ) {
-    const milliseconds =
-      value.seconds * 1000 +
-      Math.floor((value.nanoseconds || 0) / 1000000);
-
-    const date = new Date(milliseconds);
-
-    return Number.isNaN(date.getTime())
-      ? null
-      : date;
-  }
-
-  // Number
-  if (typeof value === 'number') {
-
-    // seconds timestamp
-    if (value < 100000000000) {
-      const date = new Date(value * 1000);
-
-      return Number.isNaN(date.getTime())
-        ? null
-        : date;
-    }
-
-    // milliseconds timestamp
-    const date = new Date(value);
-
-    return Number.isNaN(date.getTime())
-      ? null
-      : date;
-  }
-
-  // String
-  if (typeof value === 'string') {
-
-    const trimmed = value.trim();
-
-    if (!trimmed) {
-      return null;
-    }
-
-    const date = new Date(trimmed);
-
-    return Number.isNaN(date.getTime())
-      ? null
-      : date;
-  }
-
   return null;
 }
 
-
-// ============================================================
-// EXPIRY DATE
-// ============================================================
-
-function getSubscriptionExpiry(subscription) {
-
-  if (!subscription) {
-    return null;
-  }
-
-  return (
-    normalizeDate(subscription.expiryDate) ||
-    normalizeDate(subscription.validUntil) ||
-    normalizeDate(subscription.expiresAt) ||
-    null
-  );
-}
-
-
-// ============================================================
-// START DATE
-// ============================================================
-
-function getSubscriptionStart(subscription) {
-
-  if (!subscription) {
-    return null;
-  }
-
-  return (
-    normalizeDate(subscription.startDate) ||
-    normalizeDate(subscription.startedAt) ||
-    normalizeDate(subscription.createdAt) ||
-    null
-  );
-}
-
-
-// ============================================================
-// CHECK VALID ACTIVE SUBSCRIPTION
-// ============================================================
-
-function isSubscriptionCurrentlyActive(subscription) {
-
-  if (!subscription) {
-    return false;
-  }
-
-  if (String(subscription.status || '').toLowerCase() !== 'active') {
-    return false;
-  }
-
-  // Free is never premium
-  if (subscription.planId === 'free') {
-    return false;
-  }
-
+export function isPlanActive(activeSub, planId) {
+  if (!activeSub || activeSub.status !== 'active') return false;
   const now = new Date();
-
-  const startDate = getSubscriptionStart(subscription);
-
-  if (startDate && startDate > now) {
-    return false;
+  const expiryDateStr = activeSub.expiryDate || activeSub.validUntil;
+  if (expiryDateStr) {
+    const expiry = new Date(expiryDateStr);
+    if (expiry <= now) return false;
   }
-
-  const expiryDate = getSubscriptionExpiry(subscription);
-
-  // No expiry = valid lifetime subscription
-  if (!expiryDate) {
+  if (activeSub.planId === planId) return true;
+  if (planId === 'free' && activeSub.planId === 'free') {
     return true;
   }
-
-  return expiryDate > now;
+  return false;
 }
 
-
-// ============================================================
-// DAYS REMAINING
-// ============================================================
-
-function calculateDaysRemaining(subscription) {
-
-  const expiryDate = getSubscriptionExpiry(subscription);
-
-  if (!expiryDate) {
-    return 99999;
+// Central subscription check: getUserSubscription(userId)
+export async function getUserSubscription(userId) {
+  if (!userId) {
+    return getFreePlanObject();
   }
+  try {
+    const subsRef = collection(db, 'users', userId, 'subscriptions');
+    const snap = await getDocs(subsRef);
+    
+    const now = new Date();
+    let activeSub = null;
+    let allSubs = [];
+    let hasExpired = false;
 
-  const difference =
-    expiryDate.getTime() - Date.now();
+    for (const docSnap of snap.docs) {
+      const subData = { id: docSnap.id, ...docSnap.data() };
+      
+      const expiryDateStr = subData.expiryDate || subData.validUntil;
+      if (subData.status === 'active' && expiryDateStr) {
+        const expiry = new Date(expiryDateStr);
+        if (expiry <= now) {
+          subData.status = 'expired';
+          hasExpired = true;
+          try {
+            await updateDoc(doc(db, 'users', userId, 'subscriptions', docSnap.id), {
+              status: 'expired',
+              updatedAt: now.toISOString()
+            });
+          } catch (e) {}
+        }
+      } else if (subData.status === 'expired') {
+        hasExpired = true;
+      }
 
-  if (difference <= 0) {
-    return 0;
+      allSubs.push(subData);
+
+      if (subData.status === 'active') {
+        const expiry = expiryDateStr ? new Date(expiryDateStr) : null;
+        if (!expiry || expiry > now) {
+          if (!activeSub || (expiry && activeSub.expiryDate && expiry > new Date(activeSub.expiryDate))) {
+            activeSub = subData;
+          }
+        }
+      }
+    }
+
+    if (activeSub) {
+      const expiryDateStr = activeSub.expiryDate || activeSub.validUntil;
+      const expiry = expiryDateStr ? new Date(expiryDateStr) : null;
+      const diffTime = expiry ? expiry - now : 0;
+      const daysRemaining = expiry ? Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24))) : 0;
+      
+      return {
+        ...activeSub,
+        isPremium: true,
+        daysRemaining,
+        allSubscriptions: allSubs
+      };
+    }
+
+    // No active unexpired subscription found
+    const freeObj = getFreePlanObject();
+    if (hasExpired || allSubs.length > 0) {
+      const freeSub = allSubs.find(s => s.planId === 'free');
+      if (freeSub) {
+        freeObj.status = 'expired';
+      }
+    }
+    freeObj.allSubscriptions = allSubs;
+    return freeObj;
+  } catch (err) {
+    console.error('Error getting user subscription:', err);
+    return getFreePlanObject();
   }
-
-  return Math.ceil(
-    difference / (1000 * 60 * 60 * 24)
-  );
 }
 
-
-// ============================================================
-// FREE USER OBJECT
-// ============================================================
-
-function getFreePlanObject(allSubscriptions = []) {
-
+function getFreePlanObject() {
   return {
     planId: 'free',
     planName: 'Free',
     name: 'Free',
     price: 0,
-    durationDays: 99999,
-    status: 'active',
-
+    durationDays: 7,
+    status: 'inactive',
     startDate: null,
     expiryDate: null,
-
-    daysRemaining: 99999,
-
+    daysRemaining: 0,
     isPremium: false,
-
     source: 'system',
-
-    allSubscriptions
+    allSubscriptions: []
   };
 }
 
-
-// ============================================================
-// ADMIN CHECK
-// ============================================================
-
-export async function checkIsAdmin(user) {
-
-  if (!user) {
-    return false;
-  }
-
-  // Existing admin account
-  if (
-    user.email &&
-    user.email.toLowerCase() === 'dk9665676@gmail.com'
-  ) {
-    return true;
-  }
-
+// Admin manual grant subscription
+export async function adminGrantSubscription(targetUserId, planId, startDateStr, expiryDateStr, adminNote = '', planName = '', price = 0, durationDays = 365) {
   try {
-
-    const userRef =
-      doc(db, 'users', user.uid);
-
-    const snap =
-      await getDoc(userRef);
-
-    if (!snap.exists()) {
-      return false;
-    }
-
-    const data = snap.data();
-
-    return (
-      data.role === 'admin' ||
-      data.isAdmin === true
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Admin check failed:',
-      error
-    );
-
-    return false;
-  }
-}
-
-
-// ============================================================
-// SYSTEM SETTINGS
-// ============================================================
-
-export async function getSystemSettings(
-  forceRefresh = false
-) {
-
-  if (
-    cachedSystemSettings &&
-    !forceRefresh
-  ) {
-    return cachedSystemSettings;
-  }
-
-  try {
-
-    const ref =
-      doc(db, 'settings', 'system');
-
-    const snap =
-      await getDoc(ref);
-
-    if (snap.exists()) {
-
-      cachedSystemSettings = {
-        ...DEFAULT_SETTINGS,
-        ...snap.data()
-      };
-
-      return cachedSystemSettings;
-    }
-
-    await setDoc(
-      ref,
-      DEFAULT_SETTINGS
-    );
-
-    cachedSystemSettings = {
-      ...DEFAULT_SETTINGS
-    };
-
-    return cachedSystemSettings;
-
-  } catch (error) {
-
-    console.error(
-      'getSystemSettings error:',
-      error
-    );
-
-    return {
-      ...DEFAULT_SETTINGS
-    };
-  }
-}
-
-
-// ============================================================
-// UPDATE SYSTEM SETTINGS
-// ============================================================
-
-export async function updateSystemSettings(
-  newSettings
-) {
-
-  if (
-    !newSettings ||
-    typeof newSettings !== 'object'
-  ) {
-    throw new Error(
-      'Invalid system settings'
-    );
-  }
-
-  try {
-
-    const ref =
-      doc(db, 'settings', 'system');
-
-    const data = {
-      ...newSettings,
-      updatedAt: nowISO()
-    };
-
-    await setDoc(
-      ref,
-      data,
-      { merge: true }
-    );
-
-    cachedSystemSettings = {
-      ...(cachedSystemSettings || DEFAULT_SETTINGS),
-      ...data
-    };
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      'updateSystemSettings error:',
-      error
-    );
-
-    throw error;
-  }
-}
-
-
-// ============================================================
-// GET SUBSCRIPTION PLANS
-// ============================================================
-
-export async function getSubscriptionPlans(
-  forceRefresh = false
-) {
-
-  if (
-    cachedSubscriptionPlans &&
-    !forceRefresh
-  ) {
-    return cachedSubscriptionPlans;
-  }
-
-  try {
-
-    const ref =
-      collection(db, 'subscriptionPlans');
-
-    const snap =
-      await getDocs(ref);
-
-    // Seed defaults
-    if (snap.empty) {
-
-      const timestamp =
-        nowISO();
-
-      for (const plan of DEFAULT_PLANS) {
-
-        await setDoc(
-          doc(
-            db,
-            'subscriptionPlans',
-            plan.planId
-          ),
-          {
-            ...plan,
-            createdAt: timestamp,
-            updatedAt: timestamp
-          }
-        );
-      }
-
-      cachedSubscriptionPlans =
-        [...DEFAULT_PLANS];
-
-      return cachedSubscriptionPlans;
-    }
-
-    const plans = [];
-
-    snap.forEach(
-      planSnap => {
-
-        plans.push({
-          id: planSnap.id,
-          ...planSnap.data()
-        });
-
-      }
-    );
-
-    cachedSubscriptionPlans =
-      plans.sort(
-        (a, b) =>
-          Number(a.sortOrder || 0) -
-          Number(b.sortOrder || 0)
-      );
-
-    return cachedSubscriptionPlans;
-
-  } catch (error) {
-
-    console.error(
-      'getSubscriptionPlans error:',
-      error
-    );
-
-    return [...DEFAULT_PLANS];
-  }
-}
-
-
-// ============================================================
-// GET USER SUBSCRIPTION
-// ============================================================
-
-export async function getUserSubscription(
-  userId
-) {
-
-  if (!userId) {
-    return getFreePlanObject();
-  }
-
-  try {
-
-    const subscriptionsRef =
-      collection(
-        db,
-        'users',
-        userId,
-        'subscriptions'
-      );
-
-    const snap =
-      await getDocs(
-        subscriptionsRef
-      );
-
-    const allSubscriptions = [];
-
-    const now = new Date();
-
-    let bestPaidSubscription = null;
-
-    // ========================================================
-    // LOOP ALL SUBSCRIPTIONS
-    // ========================================================
-
-    for (
-      const subscriptionDoc of snap.docs
-    ) {
-
-      const originalData =
-        subscriptionDoc.data();
-
-      const subscription = {
-        id: subscriptionDoc.id,
-        ...originalData
-      };
-
-      const expiryDate =
-        getSubscriptionExpiry(
-          subscription
-        );
-
-      // ------------------------------------------------------
-      // EXPIRED SUBSCRIPTION
-      // ------------------------------------------------------
-
-      if (
-        subscription.status === 'active' &&
-        expiryDate &&
-        expiryDate <= now
-      ) {
-
-        subscription.status =
-          'expired';
-
-        try {
-
-          await updateDoc(
-            doc(
-              db,
-              'users',
-              userId,
-              'subscriptions',
-              subscriptionDoc.id
-            ),
-            {
-              status: 'expired',
-              updatedAt: nowISO()
-            }
-          );
-
-        } catch (updateError) {
-
-          console.warn(
-            'Unable to update expired subscription:',
-            updateError
-          );
-        }
-      }
-
-
-      allSubscriptions.push(
-        subscription
-      );
-
-
-      // ------------------------------------------------------
-      // FIND VALID PAID SUBSCRIPTION
-      // ------------------------------------------------------
-
-      if (
-        isSubscriptionCurrentlyActive(
-          subscription
-        )
-      ) {
-
-        if (
-          !bestPaidSubscription
-        ) {
-
-          bestPaidSubscription =
-            subscription;
-
-        } else {
-
-          const currentExpiry =
-            getSubscriptionExpiry(
-              bestPaidSubscription
-            );
-
-          const newExpiry =
-            getSubscriptionExpiry(
-              subscription
-            );
-
-          // Lifetime subscription wins
-          if (
-            !currentExpiry &&
-            newExpiry
-          ) {
-            continue;
-          }
-
-          if (
-            currentExpiry &&
-            !newExpiry
-          ) {
-            bestPaidSubscription =
-              subscription;
-            continue;
-          }
-
-          // Later expiry wins
-          if (
-            newExpiry &&
-            currentExpiry &&
-            newExpiry > currentExpiry
-          ) {
-            bestPaidSubscription =
-              subscription;
-          }
-        }
-      }
-    }
-
-
-    // ========================================================
-    // PAID SUBSCRIPTION FOUND
-    // ========================================================
-
-    if (bestPaidSubscription) {
-
-      const expiryDate =
-        getSubscriptionExpiry(
-          bestPaidSubscription
-        );
-
-      return {
-
-        ...bestPaidSubscription,
-
-        planName:
-          bestPaidSubscription.planName ||
-          bestPaidSubscription.name ||
-          bestPaidSubscription.planId,
-
-        name:
-          bestPaidSubscription.planName ||
-          bestPaidSubscription.name ||
-          bestPaidSubscription.planId,
-
-        isPremium: true,
-
-        daysRemaining:
-          calculateDaysRemaining(
-            bestPaidSubscription
-          ),
-
-        allSubscriptions
-      };
-    }
-
-
-    // ========================================================
-    // FREE SUBSCRIPTION
-    // ========================================================
-
-    const freeSubscription =
-      allSubscriptions.find(
-        sub =>
-          sub.planId === 'free' &&
-          sub.status === 'active'
-      );
-
-    if (freeSubscription) {
-
-      return {
-
-        ...freeSubscription,
-
-        planName:
-          freeSubscription.planName ||
-          freeSubscription.name ||
-          'Free',
-
-        name:
-          freeSubscription.planName ||
-          freeSubscription.name ||
-          'Free',
-
-        isPremium: false,
-
-        daysRemaining: 99999,
-
-        allSubscriptions
-      };
-    }
-
-
-    // ========================================================
-    // DEFAULT FREE
-    // ========================================================
-
-    return getFreePlanObject(
-      allSubscriptions
-    );
-
-  } catch (error) {
-
-    console.error(
-      'getUserSubscription error:',
-      error
-    );
-
-    return getFreePlanObject();
-  }
-}
-
-
-// ============================================================
-// GET ACTIVE PAID SUBSCRIPTION
-// ============================================================
-
-export async function getActiveSubscription(
-  userId
-) {
-
-  if (!userId) {
-    return null;
-  }
-
-  const subscription =
-    await getUserSubscription(
-      userId
-    );
-
-  if (
-    subscription &&
-    subscription.isPremium === true
-  ) {
-    return subscription;
-  }
-
-  return null;
-}
-
-
-// ============================================================
-// CHECK SPECIFIC PLAN
-// ============================================================
-
-export function isPlanActive(
-  activeSub,
-  planId
-) {
-
-  if (!activeSub) {
-    return false;
-  }
-
-  if (
-    activeSub.status !== 'active'
-  ) {
-    return false;
-  }
-
-  if (
-    activeSub.planId !== planId
-  ) {
-    return false;
-  }
-
-  if (
-    planId === 'free'
-  ) {
-    return true;
-  }
-
-  return isSubscriptionCurrentlyActive(
-    activeSub
-  );
-}
-
-
-// ============================================================
-// RESOLVE USER ID
-// ============================================================
-
-function resolveUserId(
-  userOrUserId
-) {
-
-  // UID string
-  if (
-    typeof userOrUserId === 'string' &&
-    userOrUserId.trim()
-  ) {
-    return userOrUserId.trim();
-  }
-
-  // Firebase user
-  if (
-    userOrUserId &&
-    userOrUserId.uid
-  ) {
-    return userOrUserId.uid;
-  }
-
-  // Current Firebase user
-  if (
-    auth &&
-    auth.currentUser &&
-    auth.currentUser.uid
-  ) {
-    return auth.currentUser.uid;
-  }
-
-  // Local fallback
-  try {
-
-    const saved =
-      localStorage.getItem(
-        'rankhub_user'
-      );
-
-    if (saved) {
-
-      const parsed =
-        JSON.parse(saved);
-
-      if (
-        parsed &&
-        parsed.uid
-      ) {
-        return parsed.uid;
-      }
-    }
-
-  } catch (error) {
-    console.warn(
-      'Could not read rankhub_user:',
-      error
-    );
-  }
-
-  return null;
-}
-
-
-// ============================================================
-// CENTRAL CONTENT ACCESS
-// ============================================================
-
-export async function canAccessContent(
-  userOrUserId,
-  contentType = '',
-  itemIndex = 0
-) {
-
-  console.log(
-    '[RankHub Access]',
-    {
-      contentType,
-      itemIndex
-    }
-  );
-
-
-  // ==========================================================
-  // FIRST CONTENT ALWAYS FREE
-  // ==========================================================
-
-  if (
-    Number(itemIndex) === 0
-  ) {
-    return true;
-  }
-
-
-  // ==========================================================
-  // GET USER
-  // ==========================================================
-
-  const userId =
-    resolveUserId(
-      userOrUserId
-    );
-
-
-  // ==========================================================
-  // SYSTEM SETTINGS
-  // ==========================================================
-
-  const settings =
-    await getSystemSettings();
-
-
-  // ==========================================================
-  // LAUNCH MODE
-  //
-  // subscriptionSystemEnabled = false
-  //
-  // EVERYTHING IS OPEN
-  // ==========================================================
-
-  if (
-    settings.subscriptionSystemEnabled !== true
-  ) {
-
-    console.log(
-      '[RankHub Access] Launch mode: ACCESS GRANTED'
-    );
-
-    return true;
-  }
-
-
-  // ==========================================================
-  // SUBSCRIPTION MODE
-  // ==========================================================
-
-  if (!userId) {
-
-    console.log(
-      '[RankHub Access] No user: ACCESS DENIED'
-    );
-
-    return false;
-  }
-
-
-  // ==========================================================
-  // GET SUBSCRIPTION
-  // ==========================================================
-
-  const subscription =
-    await getUserSubscription(
-      userId
-    );
-
-
-  console.log(
-    '[RankHub Access] Subscription:',
-    subscription
-  );
-
-
-  // ==========================================================
-  // PAID SUBSCRIPTION
-  // ==========================================================
-
-  if (
-    subscription &&
-    subscription.isPremium === true &&
-    subscription.status === 'active'
-  ) {
-
-    console.log(
-      '[RankHub Access] PREMIUM ACCESS GRANTED'
-    );
-
-    return true;
-  }
-
-
-  // ==========================================================
-  // NO PAID SUBSCRIPTION
-  // ==========================================================
-
-  console.log(
-    '[RankHub Access] ACCESS DENIED'
-  );
-
-  return false;
-}
-
-
-// ============================================================
-// SIMPLE PREMIUM CHECK
-// ============================================================
-
-export async function hasActiveSubscription(
-  userId
-) {
-
-  if (!userId) {
-    return false;
-  }
-
-  const subscription =
-    await getUserSubscription(
-      userId
-    );
-
-  return (
-    subscription &&
-    subscription.isPremium === true &&
-    subscription.status === 'active'
-  );
-}
-
-
-// ============================================================
-// ADMIN GRANT SUBSCRIPTION
-// ============================================================
-
-export async function adminGrantSubscription(
-  targetUserId,
-  planId,
-  startDateStr,
-  expiryDateStr,
-  adminNote = '',
-  planName = '',
-  price = 0,
-  durationDays = 365
-) {
-
-  if (!targetUserId) {
-    throw new Error(
-      'Target user ID is required'
-    );
-  }
-
-  if (!planId) {
-    throw new Error(
-      'Plan ID is required'
-    );
-  }
-
-
-  const now =
-    nowISO();
-
-
-  const subscriptionId =
-    'sub_' +
-    Date.now() +
-    '_' +
-    Math.random()
-      .toString(36)
-      .substring(2, 8);
-
-
-  const subscriptionData = {
-
-    subscriptionId,
-
-    userId:
-      targetUserId,
-
-    planId,
-
-    planName:
-      planName ||
+    const subId = 'sub_' + Date.now();
+    const subData = {
+      subscriptionId: subId,
+      userId: targetUserId,
       planId,
+      planName: planName || planId,
+      price: Number(price),
+      durationDays: Number(durationDays),
+      startDate: startDateStr,
+      expiryDate: expiryDateStr,
+      status: 'active',
+      source: 'admin',
+      paymentId: null,
+      adminNote: adminNote || 'Granted by Admin',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-    name:
-      planName ||
-      planId,
-
-    price:
-      Number(price) || 0,
-
-    durationDays:
-      Number(durationDays) || 0,
-
-    startDate:
-      startDateStr ||
-      now,
-
-    expiryDate:
-      expiryDateStr ||
-      null,
-
-    status:
-      'active',
-
-    source:
-      'admin',
-
-    paymentId:
-      null,
-
-    adminNote:
-      adminNote ||
-      'Granted by Admin',
-
-    createdAt:
-      now,
-
-    updatedAt:
-      now
-  };
-
-
-  try {
-
-    const subscriptionRef =
-      doc(
-        db,
-        'users',
-        targetUserId,
-        'subscriptions',
-        subscriptionId
-      );
-
-    await setDoc(
-      subscriptionRef,
-      subscriptionData
-    );
-
-
-    // Clear cache
-    clearSubscriptionCache();
-
-
-    console.log(
-      '[RankHub] Subscription granted:',
-      subscriptionData
-    );
-
-
+    const subRef = doc(db, 'users', targetUserId, 'subscriptions', subId);
+    await setDoc(subRef, subData);
     return true;
-
-  } catch (error) {
-
-    console.error(
-      'adminGrantSubscription error:',
-      error
-    );
-
-    throw error;
+  } catch (err) {
+    console.error('Error granting subscription:', err);
+    throw err;
   }
 }
 
-
-// ============================================================
-// ADMIN REVOKE
-// ============================================================
-
-export async function adminRevokeSubscription(
-  targetUserId,
-  subscriptionId
-) {
-
-  if (!targetUserId) {
-    throw new Error(
-      'Target user ID is required'
-    );
-  }
-
-  if (!subscriptionId) {
-    throw new Error(
-      'Subscription ID is required'
-    );
-  }
-
-
+// Admin revoke subscription
+export async function adminRevokeSubscription(targetUserId, subscriptionId) {
   try {
-
-    const ref =
-      doc(
-        db,
-        'users',
-        targetUserId,
-        'subscriptions',
-        subscriptionId
-      );
-
-    await updateDoc(
-      ref,
-      {
-        status: 'expired',
-        updatedAt: nowISO(),
-        adminNote: 'Revoked by Admin'
-      }
-    );
-
-
-    clearSubscriptionCache();
-
-
+    const subRef = doc(db, 'users', targetUserId, 'subscriptions', subscriptionId);
+    await updateDoc(subRef, {
+      status: 'expired',
+      updatedAt: new Date().toISOString(),
+      adminNote: 'Revoked by Admin'
+    });
     return true;
-
-  } catch (error) {
-
-    console.error(
-      'adminRevokeSubscription error:',
-      error
-    );
-
-    throw error;
+  } catch (err) {
+    console.error('Error revoking subscription:', err);
+    throw err;
   }
 }
 
-
-// ============================================================
-// PAYMENT CHECKOUT PREPARATION
-// ============================================================
-
-export function preparePaymentGatewayCheckout(
-  plan,
-  user
-) {
-
-  if (!plan) {
-    throw new Error(
-      'Plan is required'
-    );
-  }
-
-  if (!user || !user.uid) {
-    throw new Error(
-      'User is required'
-    );
-  }
-
-
+// Payment gateway preparation (future integration)
+export function preparePaymentGatewayCheckout(plan, user) {
+  // Architecture placeholder for Razorpay / Stripe / Paytm gateway integration
+  console.log('Payment gateway checkout prepared for plan:', plan, 'user:', user);
   return {
-
     gatewayReady: true,
-
-    orderId:
-      'order_' +
-      Date.now(),
-
-    amount:
-      Number(plan.price || 0) * 100,
-
-    currency:
-      'INR',
-
-    notes: {
-
-      planId:
-        plan.planId,
-
-      userId:
-        user.uid
-    }
+    orderId: 'order_' + Date.now(),
+    amount: plan.price * 100,
+    currency: 'INR',
+    notes: { planId: plan.planId, userId: user ? user.uid : '' }
   };
 }
 
+// Centralized access check function: canAccessContent(userOrUserId, contentType, itemIndex)
+export async function canAccessContent(userOrUserId, contentType, itemIndex) {
+  if (itemIndex === 0) {
+    return true; // #1 item is always free
+  }
 
-// ============================================================
-// RANKHUB PASS MODAL
-// ============================================================
+  let userId = null;
+  if (typeof userOrUserId === 'string') {
+    userId = userOrUserId;
+  } else if (userOrUserId && userOrUserId.uid) {
+    userId = userOrUserId.uid;
+  } else if (auth.currentUser) {
+    userId = auth.currentUser.uid;
+  } else {
+    try {
+      const saved = localStorage.getItem('rankhub_user');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u && u.uid) userId = u.uid;
+      }
+    } catch (e) {}
+  }
 
-export function showRankHubPassModal(
-  contentTitle = 'Locked Content'
-) {
+  if (!userId) {
+    return false;
+  }
 
-  let modal =
-    document.getElementById(
-      'rankhubPassGlobalModal'
-    );
+  const sub = await getUserSubscription(userId);
+  return sub && sub.isPremium === true;
+}
 
-
+// Global RankHub Pass Prompt Modal helper
+export function showRankHubPassModal(contentTitle = 'Locked Content') {
+  let modal = document.getElementById('rankhubPassGlobalModal');
   if (!modal) {
-
-    modal =
-      document.createElement('div');
-
-    modal.id =
-      'rankhubPassGlobalModal';
-
-    modal.style.cssText = `
-      position:fixed;
-      inset:0;
-      background:rgba(15,23,42,.65);
-      backdrop-filter:blur(6px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:99999;
-      padding:16px;
-    `;
-
-
+    modal = document.createElement('div');
+    modal.id = 'rankhubPassGlobalModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;';
     modal.innerHTML = `
-
-      <div style="
-        background:#fff;
-        width:100%;
-        max-width:460px;
-        border-radius:20px;
-        padding:30px;
-        box-shadow:0 25px 50px -12px rgba(0,0,0,.25);
-        position:relative;
-        text-align:center;
-      ">
-
-        <button
-          id="closeRankhubModalBtn"
-          type="button"
-          style="
-            position:absolute;
-            right:14px;
-            top:14px;
-            border:0;
-            width:32px;
-            height:32px;
-            border-radius:50%;
-            cursor:pointer;
-            font-size:20px;
-          "
-        >
-          ×
-        </button>
-
-
-        <div style="
-          font-size:42px;
-          margin-bottom:10px;
-        ">
-          🔒
+      <div style="background:#FFFFFF;width:100%;max-width:460px;border-radius:20px;padding:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);position:relative;text-align:center;">
+        <button type="button" id="closeRankhubModalBtn" style="position:absolute;top:16px;right:16px;background:#F1F5F9;border:none;width:32px;height:32px;border-radius:50%;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748B;">&times;</button>
+        <div style="width:56px;height:56px;background:#FEF2F2;color:#DC2626;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-
-
-        <div style="
-          display:inline-block;
-          background:#FEF2F2;
-          color:#DC2626;
-          padding:5px 12px;
-          border-radius:999px;
-          font-size:12px;
-          font-weight:800;
-          margin-bottom:10px;
-        ">
-          RANKHUB PASS PROTECTED
-        </div>
-
-
-        <h3 style="
-          margin:8px 0;
-          color:#0F172A;
-          font-size:22px;
-        ">
-          Unlock this content
-        </h3>
-
-
-        <p
-          id="rankhubModalContentName"
-          style="
-            color:#64748B;
-            font-size:14px;
-            margin-bottom:20px;
-          "
-        >
-          Accessing: ${contentTitle}
-        </p>
-
-
-        <div style="
-          background:#F8FAFC;
-          border:1px solid #E2E8F0;
-          border-radius:14px;
-          padding:16px;
-          text-align:left;
-          margin-bottom:20px;
-        ">
-
-          <strong>
-            RankHub Pass Pro includes:
-          </strong>
-
-          <div style="
-            margin-top:10px;
-            line-height:1.8;
-            font-size:14px;
-            color:#334155;
-          ">
-            ✓ Unlimited Mock Tests<br>
-            ✓ All Practice Sets<br>
-            ✓ All PYQ Papers<br>
-            ✓ Study Notes & PDFs<br>
-            ✓ Detailed Performance Analysis
+        <span style="display:inline-block;padding:4px 12px;background:#FEF2F2;color:#DC2626;border-radius:999px;font-size:0.75rem;font-weight:800;text-transform:uppercase;margin-bottom:8px;">RankHub Pass Protected</span>
+        <h3 style="font-size:1.375rem;font-weight:800;color:#0F172A;margin-bottom:6px;">Unlock this content with RankHub Pass</h3>
+        <p style="font-size:0.875rem;color:#64748B;margin-bottom:20px;" id="rankhubModalContentName">Accessing: ${contentTitle}</p>
+        
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:16px;margin-bottom:24px;text-align:left;">
+          <div style="font-size:0.8125rem;font-weight:800;color:#0F172A;margin-bottom:8px;">What you get with RankHub Pass Pro:</div>
+          <ul style="list-style:none;padding:0;margin:0;font-size:0.8125rem;color:#334155;display:flex;flex-direction:column;gap:6px;">
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Unlimited Mock Tests & Re-attempts</li>
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>All Practice Sets & PYQ Papers</li>
+            <li style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Study Notes & Revision PDFs</li>
+          </ul>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-around;font-size:0.75rem;font-weight:700;color:#64748B;">
+            <span>1 Week — ₹29</span>
+            <span>6 Months — ₹199</span>
+            <span style="color:#DC2626;">1 Year — ₹299</span>
           </div>
-
         </div>
 
-
-        <div style="
-          display:flex;
-          flex-direction:column;
-          gap:10px;
-        ">
-
-          <a
-            href="./rankhub-pass.html"
-            style="
-              display:block;
-              text-decoration:none;
-              background:#DC2626;
-              color:white;
-              padding:13px;
-              border-radius:10px;
-              font-weight:800;
-            "
-          >
-            Get RankHub Pass
-          </a>
-
-
-          <button
-            id="continueFreeModalBtn"
-            type="button"
-            style="
-              border:0;
-              background:#F1F5F9;
-              color:#0F172A;
-              padding:13px;
-              border-radius:10px;
-              font-weight:700;
-              cursor:pointer;
-            "
-          >
-            Continue with Free Content
-          </button>
-
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="./rankhub-pass.html" style="background:#DC2626;color:#FFFFFF;padding:12px;border-radius:10px;font-weight:800;text-decoration:none;display:block;text-align:center;">Get RankHub Pass</a>
+          <button type="button" id="continueFreeModalBtn" style="background:#F1F5F9;color:#0F172A;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;">Continue with Free Content</button>
         </div>
-
       </div>
     `;
-
-
-    document.body.appendChild(
-      modal
-    );
-
+    document.body.appendChild(modal);
 
     const closeModal = () => {
-
-      modal.style.display =
-        'none';
-
+      modal.style.display = 'none';
     };
 
-
-    const closeBtn =
-      modal.querySelector(
-        '#closeRankhubModalBtn'
-      );
-
-    const continueBtn =
-      modal.querySelector(
-        '#continueFreeModalBtn'
-      );
-
-
-    if (closeBtn) {
-      closeBtn.onclick =
-        closeModal;
-    }
-
-
-    if (continueBtn) {
-      continueBtn.onclick =
-        closeModal;
-    }
-
-
-    modal.onclick =
-      event => {
-
-        if (
-          event.target === modal
-        ) {
-          closeModal();
-        }
-
-      };
-
+    modal.querySelector('#closeRankhubModalBtn').onclick = closeModal;
+    modal.querySelector('#continueFreeModalBtn').onclick = closeModal;
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
   } else {
-
-    const nameElement =
-      modal.querySelector(
-        '#rankhubModalContentName'
-      );
-
-    if (nameElement) {
-
-      nameElement.textContent =
-        `Accessing: ${contentTitle}`;
-    }
-
-
-    modal.style.display =
-      'flex';
+    const nameEl = modal.querySelector('#rankhubModalContentName');
+    if (nameEl) nameEl.textContent = `Accessing: ${contentTitle}`;
+    modal.style.display = 'flex';
   }
 }
 
-
-// ============================================================
-// CLEAR CACHE
-// ============================================================
-
-export function clearSubscriptionCache() {
-
-  cachedSystemSettings = null;
-
-  cachedSubscriptionPlans = null;
-
-  console.log(
-    '[RankHub] Subscription cache cleared'
-  );
-}
-
-
-// ============================================================
-// FORCE REFRESH
-// ============================================================
-
-export async function refreshSubscriptionData() {
-
-  clearSubscriptionCache();
-
-  await getSystemSettings(true);
-
-  await getSubscriptionPlans(true);
-
-  return true;
-}
