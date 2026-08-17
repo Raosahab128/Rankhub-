@@ -1,8 +1,37 @@
 /**
- * RankHub Centralized Exam Data Store
- * Provides rich data for all competitive exam categories:
- * SSC, Banking, Railway, UPSC, State PSC, Police, Defence, Teaching, Medical, Engineering, Law, Insurance, MBA, CUET, State Government Jobs.
+ * ============================================================
+ * RANKHUB - CENTRALIZED EXAM DATA STORE
+ * ============================================================
+ *
+ * LOCAL EXAM DATA DISABLED
+ *
+ * IMPORTANT:
+ * ------------------------------------------------------------
+ * EXAMS_DATA me purana hardcoded exam data rakha gaya hai
+ * taaki existing references break na hon.
+ *
+ * Lekin public website ke liye:
+ *
+ * getAllExams()        -> []
+ * getExamById()        -> null
+ * filterExams()        -> []
+ * getFeaturedExams()   -> []
+ * getPopularExams()    -> []
+ * getUpcomingExams()   -> []
+ *
+ * Iska matlab:
+ * ------------------------------------------------------------
+ * Website par local/hardcoded exams SHOW NAHI honge.
+ *
+ * Future me exams Firebase / Admin Panel se load kiye ja
+ * sakte hain.
+ * ============================================================
  */
+
+
+/* ============================================================
+   CATEGORIES
+   ============================================================ */
 
 export const CATEGORIES = [
   'All',
@@ -24,8 +53,23 @@ export const CATEGORIES = [
   'State Government Jobs'
 ];
 
+
+/* ============================================================
+   LOCAL EXAM DATA
+   ============================================================
+
+   IMPORTANT:
+   Ye data file me rakha gaya hai, lekin public website
+   functions is data ko return nahi karte.
+
+   Isliye local exams website par display nahi honge.
+   ============================================================ */
+
 export const EXAMS_DATA = [
-  // ==================== SSC EXAMS ====================
+  // ==========================================================
+  // SSC EXAMS
+  // ==========================================================
+
   {
     id: 'ssc-cgl',
     name: 'SSC CGL',
@@ -46,37 +90,156 @@ export const EXAMS_DATA = [
     expectedDate: 'Notification Active',
     tierInfo: 'Tier 1 (CBT) & Tier 2 (CBT + Skill Test)',
     eligibility: 'Bachelor Degree in any discipline from a recognized University',
-    subjects: ['Quantitative Aptitude', 'Reasoning Ability', 'English Language', 'General Awareness', 'Computer Knowledge'],
+    subjects: [
+      'Quantitative Aptitude',
+      'Reasoning Ability',
+      'English Language',
+      'General Awareness',
+      'Computer Knowledge'
+    ],
     keywords: 'ssc cgl staff selection combined graduate level income tax excise audit tier 1 tier 2 reasoning math english gk',
+
     mockTestsList: [
-      { id: 'cgl-m1', title: 'SSC CGL Tier-1 Full Mock Test 01', duration: '60 Mins', questions: 100, marks: 200, status: 'Free' },
-      { id: 'cgl-m2', title: 'SSC CGL Tier-1 Full Mock Test 02', duration: '60 Mins', questions: 100, marks: 200, status: 'Free' },
-      { id: 'cgl-m3', title: 'SSC CGL Tier-1 Quant Special Test', duration: '30 Mins', questions: 50, marks: 100, status: 'Pro' },
-      { id: 'cgl-m4', title: 'SSC CGL Tier-1 Reasoning Mastery', duration: '30 Mins', questions: 50, marks: 100, status: 'Pro' },
-      { id: 'cgl-m5', title: 'SSC CGL Tier-2 Paper 1 Full Mock', duration: '150 Mins', questions: 130, marks: 390, status: 'Pro' }
+      {
+        id: 'cgl-m1',
+        title: 'SSC CGL Tier-1 Full Mock Test 01',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 200,
+        status: 'Free'
+      },
+      {
+        id: 'cgl-m2',
+        title: 'SSC CGL Tier-1 Full Mock Test 02',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 200,
+        status: 'Free'
+      },
+      {
+        id: 'cgl-m3',
+        title: 'SSC CGL Tier-1 Quant Special Test',
+        duration: '30 Mins',
+        questions: 50,
+        marks: 100,
+        status: 'Pro'
+      },
+      {
+        id: 'cgl-m4',
+        title: 'SSC CGL Tier-1 Reasoning Mastery',
+        duration: '30 Mins',
+        questions: 50,
+        marks: 100,
+        status: 'Pro'
+      },
+      {
+        id: 'cgl-m5',
+        title: 'SSC CGL Tier-2 Paper 1 Full Mock',
+        duration: '150 Mins',
+        questions: 130,
+        marks: 390,
+        status: 'Pro'
+      }
     ],
+
     practiceSets: [
-      { id: 'cgl-p1', subject: 'Quantitative Aptitude', topic: 'Algebra & Geometry High-Yield', qCount: 25, duration: '20 Mins' },
-      { id: 'cgl-p2', subject: 'Reasoning Ability', topic: 'Coding-Decoding & Syllogism', qCount: 25, duration: '15 Mins' },
-      { id: 'cgl-p3', subject: 'English Language', topic: 'Error Spotting & Reading Comprehension', qCount: 25, duration: '15 Mins' },
-      { id: 'cgl-p4', subject: 'General Awareness', topic: 'Indian Polity & Science MCQs', qCount: 25, duration: '10 Mins' }
+      {
+        id: 'cgl-p1',
+        subject: 'Quantitative Aptitude',
+        topic: 'Algebra & Geometry High-Yield',
+        qCount: 25,
+        duration: '20 Mins'
+      },
+      {
+        id: 'cgl-p2',
+        subject: 'Reasoning Ability',
+        topic: 'Coding-Decoding & Syllogism',
+        qCount: 25,
+        duration: '15 Mins'
+      },
+      {
+        id: 'cgl-p3',
+        subject: 'English Language',
+        topic: 'Error Spotting & Reading Comprehension',
+        qCount: 25,
+        duration: '15 Mins'
+      },
+      {
+        id: 'cgl-p4',
+        subject: 'General Awareness',
+        topic: 'Indian Polity & Science MCQs',
+        qCount: 25,
+        duration: '10 Mins'
+      }
     ],
+
     pyqList: [
-      { id: 'cgl-pyq-2025', year: '2025', title: 'SSC CGL Tier-1 Official Paper 2025 (Shift 1)', duration: '60 Mins', questions: 100 },
-      { id: 'cgl-pyq-2024', year: '2024', title: 'SSC CGL Tier-1 Official Paper 2024 (Shift 2)', duration: '60 Mins', questions: 100 },
-      { id: 'cgl-pyq-2023', year: '2023', title: 'SSC CGL Tier-1 Official Paper 2023 (Shift 1)', duration: '60 Mins', questions: 100 },
-      { id: 'cgl-pyq-2022', year: '2022', title: 'SSC CGL Tier-1 Official Paper 2022 (Shift 3)', duration: '60 Mins', questions: 100 }
+      {
+        id: 'cgl-pyq-2025',
+        year: '2025',
+        title: 'SSC CGL Tier-1 Official Paper 2025 (Shift 1)',
+        duration: '60 Mins',
+        questions: 100
+      },
+      {
+        id: 'cgl-pyq-2024',
+        year: '2024',
+        title: 'SSC CGL Tier-1 Official Paper 2024 (Shift 2)',
+        duration: '60 Mins',
+        questions: 100
+      },
+      {
+        id: 'cgl-pyq-2023',
+        year: '2023',
+        title: 'SSC CGL Tier-1 Official Paper 2023 (Shift 1)',
+        duration: '60 Mins',
+        questions: 100
+      },
+      {
+        id: 'cgl-pyq-2022',
+        year: '2022',
+        title: 'SSC CGL Tier-1 Official Paper 2022 (Shift 3)',
+        duration: '60 Mins',
+        questions: 100
+      }
     ],
+
     studyNotes: [
-      { id: 'cgl-n1', title: 'Complete Mensuration & Geometry Formula Booklet', pages: '42 Pages', format: 'PDF' },
-      { id: 'cgl-n2', title: '500 Most Frequently Asked Vocabularies & Idioms', pages: '28 Pages', format: 'PDF' },
-      { id: 'cgl-n3', title: 'Indian Constitution & Articles Quick Revision', pages: '35 Pages', format: 'PDF' }
+      {
+        id: 'cgl-n1',
+        title: 'Complete Mensuration & Geometry Formula Booklet',
+        pages: '42 Pages',
+        format: 'PDF'
+      },
+      {
+        id: 'cgl-n2',
+        title: '500 Most Frequently Asked Vocabularies & Idioms',
+        pages: '28 Pages',
+        format: 'PDF'
+      },
+      {
+        id: 'cgl-n3',
+        title: 'Indian Constitution & Articles Quick Revision',
+        pages: '35 Pages',
+        format: 'PDF'
+      }
     ],
+
     currentAffairsList: [
-      { id: 'ca-1', title: 'Monthly Current Affairs Digest - Last 12 Months', date: 'August 2026' },
-      { id: 'ca-2', title: 'Government Schemes & Union Budget Summary', date: 'July 2026' }
+      {
+        id: 'ca-1',
+        title: 'Monthly Current Affairs Digest - Last 12 Months',
+        date: 'August 2026'
+      },
+      {
+        id: 'ca-2',
+        title: 'Government Schemes & Union Budget Summary',
+        date: 'July 2026'
+      }
     ]
   },
+
+
   {
     id: 'ssc-chsl',
     name: 'SSC CHSL',
@@ -97,21 +260,58 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'Tier 1 & Tier 2 (Objective + Typing Test)',
     eligibility: '10+2 / Higher Secondary pass from recognized board',
-    subjects: ['General Intelligence', 'English Language', 'Quantitative Aptitude', 'General Awareness'],
+    subjects: [
+      'General Intelligence',
+      'English Language',
+      'Quantitative Aptitude',
+      'General Awareness'
+    ],
     keywords: 'ssc chsl 10+2 ldc deo jsa staff selection tier 1 tier 2 typing',
+
     mockTestsList: [
-      { id: 'chsl-m1', title: 'SSC CHSL Tier-1 Full Mock Test 01', duration: '60 Mins', questions: 100, marks: 200, status: 'Free' },
-      { id: 'chsl-m2', title: 'SSC CHSL Tier-1 Full Mock Test 02', duration: '60 Mins', questions: 100, marks: 200, status: 'Free' }
+      {
+        id: 'chsl-m1',
+        title: 'SSC CHSL Tier-1 Full Mock Test 01',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 200,
+        status: 'Free'
+      },
+      {
+        id: 'chsl-m2',
+        title: 'SSC CHSL Tier-1 Full Mock Test 02',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 200,
+        status: 'Free'
+      }
     ],
+
     practiceSets: [
-      { id: 'chsl-p1', subject: 'Quantitative Aptitude', topic: 'Percentage & Profit Loss', qCount: 25, duration: '20 Mins' }
+      {
+        id: 'chsl-p1',
+        subject: 'Quantitative Aptitude',
+        topic: 'Percentage & Profit Loss',
+        qCount: 25,
+        duration: '20 Mins'
+      }
     ],
+
     pyqList: [
-      { id: 'chsl-pyq-1', year: '2025', title: 'SSC CHSL Official Paper 2025', duration: '60 Mins', questions: 100 }
+      {
+        id: 'chsl-pyq-1',
+        year: '2025',
+        title: 'SSC CHSL Official Paper 2025',
+        duration: '60 Mins',
+        questions: 100
+      }
     ],
+
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ssc-mts',
     name: 'SSC MTS',
@@ -132,16 +332,32 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Oct 2026',
     tierInfo: 'Session 1 & Session 2 CBT',
     eligibility: '10th Class pass or equivalent',
-    subjects: ['Numerical Ability', 'Reasoning Ability', 'General Awareness', 'English Language'],
-    keywords: 'ssc mts havaldar 10th pass multi tasking staff math reasoning gk english',
-    mockTestsList: [
-      { id: 'mts-m1', title: 'SSC MTS Full Length Mock Test 01', duration: '90 Mins', questions: 90, marks: 270, status: 'Free' }
+    subjects: [
+      'Numerical Ability',
+      'Reasoning Ability',
+      'General Awareness',
+      'English Language'
     ],
+    keywords: 'ssc mts havaldar 10th pass multi tasking staff math reasoning gk english',
+
+    mockTestsList: [
+      {
+        id: 'mts-m1',
+        title: 'SSC MTS Full Length Mock Test 01',
+        duration: '90 Mins',
+        questions: 90,
+        marks: 270,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ssc-gd',
     name: 'SSC GD Constable',
@@ -162,16 +378,32 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Dec 2026',
     tierInfo: 'Computer Based Test (CBE) & PST/PET',
     eligibility: 'Matriculation (10th) from a recognized Board',
-    subjects: ['General Intelligence', 'General Knowledge', 'Elementary Mathematics', 'Hindi / English'],
-    keywords: 'ssc gd constable capf bsf crpf cisf police 10th pass pet pst army',
-    mockTestsList: [
-      { id: 'gd-m1', title: 'SSC GD Constable Mock Test 01', duration: '60 Mins', questions: 80, marks: 160, status: 'Free' }
+    subjects: [
+      'General Intelligence',
+      'General Knowledge',
+      'Elementary Mathematics',
+      'Hindi / English'
     ],
+    keywords: 'ssc gd constable capf bsf crpf cisf police 10th pass pet pst army',
+
+    mockTestsList: [
+      {
+        id: 'gd-m1',
+        title: 'SSC GD Constable Mock Test 01',
+        duration: '60 Mins',
+        questions: 80,
+        marks: 160,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ssc-cpo',
     name: 'SSC CPO',
@@ -192,14 +424,22 @@ export const EXAMS_DATA = [
     expectedDate: 'Cycle Ongoing',
     tierInfo: 'Paper 1, PET/PST & Paper 2 (English)',
     eligibility: 'Bachelor degree in any stream',
-    subjects: ['General Intelligence & Reasoning', 'General Knowledge', 'Quantitative Aptitude', 'English Comprehension'],
+    subjects: [
+      'General Intelligence & Reasoning',
+      'General Knowledge',
+      'Quantitative Aptitude',
+      'English Comprehension'
+    ],
     keywords: 'ssc cpo sub inspector delhi police capf si pet english',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ssc-je',
     name: 'SSC JE',
@@ -220,14 +460,21 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Exam',
     tierInfo: 'Paper 1 (CBT) & Paper 2 (Technical CBT)',
     eligibility: 'Degree or Diploma in Engineering (Civil/Mechanical/Electrical)',
-    subjects: ['General Intelligence', 'General Awareness', 'Civil / Electrical / Mechanical Engineering'],
+    subjects: [
+      'General Intelligence',
+      'General Awareness',
+      'Civil / Electrical / Mechanical Engineering'
+    ],
     keywords: 'ssc je junior engineer cpwd engineering civil mechanical electrical diploma',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ssc-steno',
     name: 'SSC Stenographer',
@@ -248,8 +495,13 @@ export const EXAMS_DATA = [
     expectedDate: 'Notification Expected',
     tierInfo: 'CBT Examination & Skill Test in Stenography',
     eligibility: '10+2 Pass + Stenography speed requirement',
-    subjects: ['General Intelligence & Reasoning', 'General Awareness', 'English Language & Comprehension'],
+    subjects: [
+      'General Intelligence & Reasoning',
+      'General Awareness',
+      'English Language & Comprehension'
+    ],
     keywords: 'ssc stenographer steno grade c grade d typing shorthand skill test',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -257,7 +509,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== BANKING EXAMS ====================
+
+  // ==========================================================
+  // BANKING
+  // ==========================================================
+
   {
     id: 'sbi-po',
     name: 'SBI PO',
@@ -278,26 +534,88 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Oct 2026',
     tierInfo: 'Prelims, Mains, Psychometric Test & Interview',
     eligibility: 'Bachelor degree in any discipline from a recognized University',
-    subjects: ['Data Analysis & Interpretation', 'Reasoning & Computer Aptitude', 'English Language', 'General/Banking Awareness'],
+    subjects: [
+      'Data Analysis & Interpretation',
+      'Reasoning & Computer Aptitude',
+      'English Language',
+      'General/Banking Awareness'
+    ],
     keywords: 'sbi po state bank officer prelims mains interview banking quant reasoning english ga',
+
     mockTestsList: [
-      { id: 'sbipo-m1', title: 'SBI PO Prelims Full Length Mock 01', duration: '60 Mins', questions: 100, marks: 100, status: 'Free' },
-      { id: 'sbipo-m2', title: 'SBI PO Prelims Full Length Mock 02', duration: '60 Mins', questions: 100, marks: 100, status: 'Free' },
-      { id: 'sbipo-m3', title: 'SBI PO Mains Data Analysis Special', duration: '60 Mins', questions: 35, marks: 60, status: 'Pro' }
+      {
+        id: 'sbipo-m1',
+        title: 'SBI PO Prelims Full Length Mock 01',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 100,
+        status: 'Free'
+      },
+      {
+        id: 'sbipo-m2',
+        title: 'SBI PO Prelims Full Length Mock 02',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 100,
+        status: 'Free'
+      },
+      {
+        id: 'sbipo-m3',
+        title: 'SBI PO Mains Data Analysis Special',
+        duration: '60 Mins',
+        questions: 35,
+        marks: 60,
+        status: 'Pro'
+      }
     ],
+
     practiceSets: [
-      { id: 'sbipo-p1', subject: 'Quantitative Aptitude', topic: 'High-Level Data Interpretation (DI)', qCount: 20, duration: '20 Mins' },
-      { id: 'sbipo-p2', subject: 'Reasoning Ability', topic: 'Seating Arrangement & Puzzles', qCount: 20, duration: '20 Mins' }
+      {
+        id: 'sbipo-p1',
+        subject: 'Quantitative Aptitude',
+        topic: 'High-Level Data Interpretation (DI)',
+        qCount: 20,
+        duration: '20 Mins'
+      },
+      {
+        id: 'sbipo-p2',
+        subject: 'Reasoning Ability',
+        topic: 'Seating Arrangement & Puzzles',
+        qCount: 20,
+        duration: '20 Mins'
+      }
     ],
+
     pyqList: [
-      { id: 'sbipo-pyq-1', year: '2025', title: 'SBI PO Prelims Official Memory Based Paper', duration: '60 Mins', questions: 100 },
-      { id: 'sbipo-pyq-2', year: '2024', title: 'SBI PO Mains Official Memory Based Paper', duration: '180 Mins', questions: 155 }
+      {
+        id: 'sbipo-pyq-1',
+        year: '2025',
+        title: 'SBI PO Prelims Official Memory Based Paper',
+        duration: '60 Mins',
+        questions: 100
+      },
+      {
+        id: 'sbipo-pyq-2',
+        year: '2024',
+        title: 'SBI PO Mains Official Memory Based Paper',
+        duration: '180 Mins',
+        questions: 155
+      }
     ],
+
     studyNotes: [
-      { id: 'sbipo-n1', title: 'Complete Banking Awareness & Reserve Bank RBI Circulars 2026', pages: '50 Pages', format: 'PDF' }
+      {
+        id: 'sbipo-n1',
+        title: 'Complete Banking Awareness & Reserve Bank RBI Circulars 2026',
+        pages: '50 Pages',
+        format: 'PDF'
+      }
     ],
+
     currentAffairsList: []
   },
+
+
   {
     id: 'sbi-clerk',
     name: 'SBI Clerk',
@@ -318,16 +636,32 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'Prelims & Mains (No Interview)',
     eligibility: 'Graduation in any discipline',
-    subjects: ['Numerical Ability', 'Reasoning Ability', 'English Language', 'General/Financial Awareness'],
-    keywords: 'sbi clerk junior associate customer support state bank prelims mains',
-    mockTestsList: [
-      { id: 'sbiclerk-m1', title: 'SBI Clerk Prelims Mock Test 01', duration: '60 Mins', questions: 100, marks: 100, status: 'Free' }
+    subjects: [
+      'Numerical Ability',
+      'Reasoning Ability',
+      'English Language',
+      'General/Financial Awareness'
     ],
+    keywords: 'sbi clerk junior associate customer support state bank prelims mains',
+
+    mockTestsList: [
+      {
+        id: 'sbiclerk-m1',
+        title: 'SBI Clerk Prelims Mock Test 01',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 100,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ibps-po',
     name: 'IBPS PO',
@@ -348,16 +682,32 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'Prelims, Mains & Interview',
     eligibility: 'Graduation in any stream with computer literacy',
-    subjects: ['Quantitative Aptitude', 'Reasoning', 'English', 'General & Banking Awareness'],
-    keywords: 'ibps po banking probationary officer bank prelims mains computer',
-    mockTestsList: [
-      { id: 'ibpspo-m1', title: 'IBPS PO Prelims Full Mock 01', duration: '60 Mins', questions: 100, marks: 100, status: 'Free' }
+    subjects: [
+      'Quantitative Aptitude',
+      'Reasoning',
+      'English',
+      'General & Banking Awareness'
     ],
+    keywords: 'ibps po banking probationary officer bank prelims mains computer',
+
+    mockTestsList: [
+      {
+        id: 'ibpspo-m1',
+        title: 'IBPS PO Prelims Full Mock 01',
+        duration: '60 Mins',
+        questions: 100,
+        marks: 100,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ibps-clerk',
     name: 'IBPS Clerk',
@@ -378,14 +728,22 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Exam',
     tierInfo: 'Prelims & Mains (No Interview)',
     eligibility: 'Graduation degree & proficiency in local language',
-    subjects: ['Reasoning', 'Numerical Ability', 'English', 'General/Financial Awareness'],
+    subjects: [
+      'Reasoning',
+      'Numerical Ability',
+      'English',
+      'General/Financial Awareness'
+    ],
     keywords: 'ibps clerk bank clerical state language prelims mains',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ibps-rrb-po',
     name: 'IBPS RRB Officer Scale 1',
@@ -406,14 +764,23 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Exam',
     tierInfo: 'Prelims, Mains & Interview',
     eligibility: 'Bachelor degree + Proficiency in regional language',
-    subjects: ['Quantitative Aptitude', 'Reasoning Ability', 'Computer Knowledge', 'Financial Awareness', 'Hindi / English'],
+    subjects: [
+      'Quantitative Aptitude',
+      'Reasoning Ability',
+      'Computer Knowledge',
+      'Financial Awareness',
+      'Hindi / English'
+    ],
     keywords: 'ibps rrb po regional rural bank scale 1 officer prelims mains',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rbi-grade-b',
     name: 'RBI Grade B',
@@ -434,8 +801,16 @@ export const EXAMS_DATA = [
     expectedDate: 'Notification Active',
     tierInfo: 'Phase 1, Phase 2 (ESI + FM) & Interview',
     eligibility: 'Graduation with min 60% marks (50% for SC/ST/PwBD)',
-    subjects: ['General Awareness', 'Quantitative Aptitude', 'Reasoning', 'English Language', 'Economic & Social Issues', 'Finance & Management'],
+    subjects: [
+      'General Awareness',
+      'Quantitative Aptitude',
+      'Reasoning',
+      'English Language',
+      'Economic & Social Issues',
+      'Finance & Management'
+    ],
     keywords: 'rbi grade b reserve bank officer phase 1 phase 2 esi fm economics finance',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -443,7 +818,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== RAILWAY EXAMS ====================
+
+  // ==========================================================
+  // RAILWAY
+  // ==========================================================
+
   {
     id: 'rrb-ntpc',
     name: 'RRB NTPC',
@@ -464,19 +843,49 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Nov 2026',
     tierInfo: 'CBT 1, CBT 2 & Typing / CBAT',
     eligibility: '10+2 / Graduate depending on post category',
-    subjects: ['General Awareness', 'Mathematics', 'General Intelligence & Reasoning'],
+    subjects: [
+      'General Awareness',
+      'Mathematics',
+      'General Intelligence & Reasoning'
+    ],
     keywords: 'rrb ntpc railway station master goods guard cbt 1 cbt 2 math reasoning gk',
+
     mockTestsList: [
-      { id: 'ntpc-m1', title: 'RRB NTPC CBT-1 Full Length Mock 01', duration: '90 Mins', questions: 100, marks: 100, status: 'Free' },
-      { id: 'ntpc-m2', title: 'RRB NTPC CBT-2 Full Length Mock 01', duration: '90 Mins', questions: 120, marks: 120, status: 'Pro' }
+      {
+        id: 'ntpc-m1',
+        title: 'RRB NTPC CBT-1 Full Length Mock 01',
+        duration: '90 Mins',
+        questions: 100,
+        marks: 100,
+        status: 'Free'
+      },
+      {
+        id: 'ntpc-m2',
+        title: 'RRB NTPC CBT-2 Full Length Mock 01',
+        duration: '90 Mins',
+        questions: 120,
+        marks: 120,
+        status: 'Pro'
+      }
     ],
+
     practiceSets: [],
+
     pyqList: [
-      { id: 'ntpc-pyq-1', year: '2024', title: 'RRB NTPC CBT 1 Official Memory Based Paper', duration: '90 Mins', questions: 100 }
+      {
+        id: 'ntpc-pyq-1',
+        year: '2024',
+        title: 'RRB NTPC CBT 1 Official Memory Based Paper',
+        duration: '90 Mins',
+        questions: 100
+      }
     ],
+
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rrb-group-d',
     name: 'RRB Group D',
@@ -497,14 +906,22 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Late 2026',
     tierInfo: 'CBT, Physical Efficiency Test (PET) & DV',
     eligibility: '10th pass or ITI from NCVT/SCVT',
-    subjects: ['General Science', 'Mathematics', 'General Intelligence & Reasoning', 'Current Affairs'],
+    subjects: [
+      'General Science',
+      'Mathematics',
+      'General Intelligence & Reasoning',
+      'Current Affairs'
+    ],
     keywords: 'rrb group d railway level 1 trackman pointsman science math reasoning',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rrb-alp',
     name: 'RRB ALP',
@@ -525,14 +942,23 @@ export const EXAMS_DATA = [
     expectedDate: 'Cycle Active',
     tierInfo: 'CBT 1, CBT 2 (Part A & B) & CBAT (Psychometric)',
     eligibility: 'Matriculation + ITI / Diploma in Engineering',
-    subjects: ['Mathematics', 'General Intelligence', 'Basic Science & Engineering', 'General Awareness', 'Technical Trade'],
+    subjects: [
+      'Mathematics',
+      'General Intelligence',
+      'Basic Science & Engineering',
+      'General Awareness',
+      'Technical Trade'
+    ],
     keywords: 'rrb alp assistant loco pilot railway locomotive cbt 1 cbt 2 trade iti diploma',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rrb-technician',
     name: 'RRB Technician',
@@ -553,14 +979,22 @@ export const EXAMS_DATA = [
     expectedDate: 'Notification Active',
     tierInfo: 'CBT Mode Exam + Document Verification',
     eligibility: 'B.Sc / Diploma / ITI in relevant trade',
-    subjects: ['General Science', 'Mathematics', 'Reasoning', 'Technical Trade Knowledge'],
+    subjects: [
+      'General Science',
+      'Mathematics',
+      'Reasoning',
+      'Technical Trade Knowledge'
+    ],
     keywords: 'rrb technician grade 1 grade 3 signal workshop iti trade',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rpf-constable',
     name: 'RPF Constable',
@@ -581,14 +1015,21 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'CBT, PET/PST & Document Verification',
     eligibility: '10th Class pass from recognized Board',
-    subjects: ['General Awareness', 'Arithmetic', 'General Intelligence & Reasoning'],
+    subjects: [
+      'General Awareness',
+      'Arithmetic',
+      'General Intelligence & Reasoning'
+    ],
     keywords: 'rpf constable railway protection force rpsf 10th pass pet pst',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'rpf-si',
     name: 'RPF Sub Inspector',
@@ -609,8 +1050,13 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'CBT, PET/PST & Document Verification',
     eligibility: 'Graduate in any discipline',
-    subjects: ['General Awareness', 'Arithmetic', 'General Intelligence & Reasoning'],
+    subjects: [
+      'General Awareness',
+      'Arithmetic',
+      'General Intelligence & Reasoning'
+    ],
     keywords: 'rpf si sub inspector railway protection force rpsf graduate pet',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -618,7 +1064,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== STATE PSC & BIHAR EXAMS ====================
+
+  // ==========================================================
+  // STATE PSC / BIHAR
+  // ==========================================================
+
   {
     id: 'bpsc-cce',
     name: 'BPSC CCE',
@@ -639,23 +1089,67 @@ export const EXAMS_DATA = [
     expectedDate: 'Date Announced',
     tierInfo: 'Prelims (GS), Mains (GS I, II, Essay & Optional) & Interview',
     eligibility: 'Graduation degree from recognized University',
-    subjects: ['General Studies', 'Bihar Special GK', 'Current Affairs', 'History & Geography of Bihar', 'Mental Ability'],
+    subjects: [
+      'General Studies',
+      'Bihar Special GK',
+      'Current Affairs',
+      'History & Geography of Bihar',
+      'Mental Ability'
+    ],
     keywords: 'bpsc bihar state psc deputy collector dsp prelims mains bihar gk history geography',
+
     mockTestsList: [
-      { id: 'bpsc-m1', title: 'BPSC CCE Prelims Full Length Mock 01', duration: '120 Mins', questions: 150, marks: 150, status: 'Free' },
-      { id: 'bpsc-m2', title: 'BPSC CCE Prelims Full Length Mock 02', duration: '120 Mins', questions: 150, marks: 150, status: 'Free' }
+      {
+        id: 'bpsc-m1',
+        title: 'BPSC CCE Prelims Full Length Mock 01',
+        duration: '120 Mins',
+        questions: 150,
+        marks: 150,
+        status: 'Free'
+      },
+      {
+        id: 'bpsc-m2',
+        title: 'BPSC CCE Prelims Full Length Mock 02',
+        duration: '120 Mins',
+        questions: 150,
+        marks: 150,
+        status: 'Free'
+      }
     ],
+
     practiceSets: [
-      { id: 'bpsc-p1', subject: 'Bihar Special GK', topic: 'Modern History of Bihar & Freedom Movement', qCount: 30, duration: '20 Mins' }
+      {
+        id: 'bpsc-p1',
+        subject: 'Bihar Special GK',
+        topic: 'Modern History of Bihar & Freedom Movement',
+        qCount: 30,
+        duration: '20 Mins'
+      }
     ],
+
     pyqList: [
-      { id: 'bpsc-pyq-1', year: '2024', title: '70th BPSC CCE Prelims Official Question Paper', duration: '120 Mins', questions: 150 }
+      {
+        id: 'bpsc-pyq-1',
+        year: '2024',
+        title: '70th BPSC CCE Prelims Official Question Paper',
+        duration: '120 Mins',
+        questions: 150
+      }
     ],
+
     studyNotes: [
-      { id: 'bpsc-n1', title: 'Complete Bihar Special GK & Census 2011 Master Guide', pages: '65 Pages', format: 'PDF' }
+      {
+        id: 'bpsc-n1',
+        title: 'Complete Bihar Special GK & Census 2011 Master Guide',
+        pages: '65 Pages',
+        format: 'PDF'
+      }
     ],
+
     currentAffairsList: []
   },
+
+
   {
     id: 'bihar-police-si',
     name: 'Bihar Police SI',
@@ -676,14 +1170,23 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Late 2026',
     tierInfo: 'Prelims, Mains & Physical Efficiency Test (PET)',
     eligibility: 'Graduation + Physical Standard Requirements',
-    subjects: ['General Knowledge', 'Current Events', 'Hindi', 'General Studies', 'Mathematics'],
+    subjects: [
+      'General Knowledge',
+      'Current Events',
+      'Hindi',
+      'General Studies',
+      'Mathematics'
+    ],
     keywords: 'bihar police si sub inspector sergeant prelims mains pet physical test bpssc',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'bihar-police-constable',
     name: 'Bihar Police Constable',
@@ -704,14 +1207,24 @@ export const EXAMS_DATA = [
     expectedDate: 'Exam Cycle Active',
     tierInfo: 'Written Examination & PET (Physical Test)',
     eligibility: '10+2 (Intermediate) pass',
-    subjects: ['Hindi', 'English', 'Mathematics', 'Social Science', 'Science', 'General Knowledge'],
+    subjects: [
+      'Hindi',
+      'English',
+      'Mathematics',
+      'Social Science',
+      'Science',
+      'General Knowledge'
+    ],
     keywords: 'bihar police constable csbc 12th pass physical pet hindi gk math science',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'bihar-ssc-cgl',
     name: 'Bihar SSC CGL',
@@ -732,14 +1245,21 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Late 2026',
     tierInfo: 'Prelims & Mains CBT Examination',
     eligibility: 'Bachelor Degree in any discipline',
-    subjects: ['General Studies', 'General Science & Mathematics', 'Comprehension / Logic / Mental Ability'],
+    subjects: [
+      'General Studies',
+      'General Science & Mathematics',
+      'Comprehension / Logic / Mental Ability'
+    ],
     keywords: 'bssc cgl bihar staff selection secretariat assistant prelims mains',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'bihar-teacher-tre',
     name: 'Bihar Teacher (BPSC TRE)',
@@ -760,14 +1280,21 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Examination',
     tierInfo: 'Written Test (Language qualifying + General Studies & Subject)',
     eligibility: 'D.El.Ed / B.Ed / STET / CTET Qualified',
-    subjects: ['Language (Hindi/English)', 'General Studies', 'Subject Specialization'],
+    subjects: [
+      'Language (Hindi/English)',
+      'General Studies',
+      'Subject Specialization'
+    ],
     keywords: 'bihar teacher tre bpsc primary middle secondary stet ctet teaching',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'uppsc-pcs',
     name: 'UPPSC PCS',
@@ -788,8 +1315,14 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Nov 2026',
     tierInfo: 'Prelims, Mains (GS Papers I-VI) & Interview',
     eligibility: 'Bachelor Degree in any discipline',
-    subjects: ['General Studies I', 'CSAT', 'UP Special GS', 'Essay'],
+    subjects: [
+      'General Studies I',
+      'CSAT',
+      'UP Special GS',
+      'Essay'
+    ],
     keywords: 'uppsc pcs uttar pradesh sdm dsp prelims mains up special',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -797,7 +1330,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== UPSC EXAMS ====================
+
+  // ==========================================================
+  // UPSC
+  // ==========================================================
+
   {
     id: 'upsc-cse',
     name: 'UPSC Civil Services',
@@ -818,17 +1355,42 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Cycle',
     tierInfo: 'Prelims (GS + CSAT), Mains (9 Papers) & Personality Test',
     eligibility: 'Degree from recognized university (Min Age 21)',
-    subjects: ['General Studies I', 'CSAT (GS Paper II)', 'Essay', 'Polity & Governance', 'History & Culture', 'Economy & Environment'],
-    keywords: 'upsc cse ias ips ifs civil services prelims mains csat polity history geography economy',
-    mockTestsList: [
-      { id: 'upsc-m1', title: 'UPSC CSE Prelims GS Paper-1 Mock 01', duration: '120 Mins', questions: 100, marks: 200, status: 'Free' },
-      { id: 'upsc-m2', title: 'UPSC CSE Prelims CSAT Paper-2 Mock 01', duration: '120 Mins', questions: 80, marks: 200, status: 'Free' }
+    subjects: [
+      'General Studies I',
+      'CSAT (GS Paper II)',
+      'Essay',
+      'Polity & Governance',
+      'History & Culture',
+      'Economy & Environment'
     ],
+    keywords: 'upsc cse ias ips ifs civil services prelims mains csat polity history geography economy',
+
+    mockTestsList: [
+      {
+        id: 'upsc-m1',
+        title: 'UPSC CSE Prelims GS Paper-1 Mock 01',
+        duration: '120 Mins',
+        questions: 100,
+        marks: 200,
+        status: 'Free'
+      },
+      {
+        id: 'upsc-m2',
+        title: 'UPSC CSE Prelims CSAT Paper-2 Mock 01',
+        duration: '120 Mins',
+        questions: 80,
+        marks: 200,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'upsc-nda',
     name: 'UPSC NDA',
@@ -849,14 +1411,20 @@ export const EXAMS_DATA = [
     expectedDate: 'Bi-Annual Examination',
     tierInfo: 'Written Exam (Mathematics & GAT) & SSB Interview',
     eligibility: '10+2 Pass (Physics & Maths required for Navy/Air Force)',
-    subjects: ['Mathematics', 'General Ability Test (English, Physics, Chemistry, GK)'],
+    subjects: [
+      'Mathematics',
+      'General Ability Test (English, Physics, Chemistry, GK)'
+    ],
     keywords: 'upsc nda defence army navy air force ssb interview math gat 12th pass',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'upsc-cds',
     name: 'UPSC CDS',
@@ -877,8 +1445,13 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Nov 2026',
     tierInfo: 'Written Examination & SSB Interview',
     eligibility: 'Degree from recognized University / Engineering for AFA',
-    subjects: ['English', 'General Knowledge', 'Elementary Mathematics'],
+    subjects: [
+      'English',
+      'General Knowledge',
+      'Elementary Mathematics'
+    ],
     keywords: 'upsc cds defence ima ota afa ssb military army officer graduate',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -886,7 +1459,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== POLICE & DEFENCE EXAMS ====================
+
+  // ==========================================================
+  // POLICE / DEFENCE
+  // ==========================================================
+
   {
     id: 'up-police-constable',
     name: 'UP Police Constable',
@@ -907,14 +1484,22 @@ export const EXAMS_DATA = [
     expectedDate: 'Cycle Active',
     tierInfo: 'Written Examination, DV/PST & PET',
     eligibility: '10+2 (Intermediate) Pass',
-    subjects: ['General Knowledge', 'General Hindi', 'Numerical & Mental Ability', 'Mental Aptitude / Reasoning'],
+    subjects: [
+      'General Knowledge',
+      'General Hindi',
+      'Numerical & Mental Ability',
+      'Mental Aptitude / Reasoning'
+    ],
     keywords: 'up police constable upprb pac 12th pass hindi gk reasoning physical',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'afcat',
     name: 'AFCAT',
@@ -935,8 +1520,14 @@ export const EXAMS_DATA = [
     expectedDate: 'Bi-Annual Exam',
     tierInfo: 'Online Examination & AFSB Interview',
     eligibility: 'Graduation / B.Tech with required physical & medical standards',
-    subjects: ['Verbal Ability in English', 'Numerical Ability', 'Reasoning & Military Aptitude', 'General Awareness'],
+    subjects: [
+      'Verbal Ability in English',
+      'Numerical Ability',
+      'Reasoning & Military Aptitude',
+      'General Awareness'
+    ],
     keywords: 'afcat air force officer flying ground duty afsb interview English reasoning',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -944,7 +1535,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== TEACHING EXAMS ====================
+
+  // ==========================================================
+  // TEACHING
+  // ==========================================================
+
   {
     id: 'ctet',
     name: 'CTET',
@@ -965,16 +1560,33 @@ export const EXAMS_DATA = [
     expectedDate: 'Bi-Annual Examination',
     tierInfo: 'Paper 1 (Class 1-5) & Paper 2 (Class 6-8)',
     eligibility: 'D.El.Ed / B.Ed / D.Ed with minimum qualifying marks',
-    subjects: ['Child Development & Pedagogy', 'Language I', 'Language II', 'Mathematics', 'EVS / Social Science'],
-    keywords: 'ctet teaching cbse central teacher eligibility paper 1 paper 2 pedagogy evs',
-    mockTestsList: [
-      { id: 'ctet-m1', title: 'CTET Paper-1 Primary Full Mock 01', duration: '150 Mins', questions: 150, marks: 150, status: 'Free' }
+    subjects: [
+      'Child Development & Pedagogy',
+      'Language I',
+      'Language II',
+      'Mathematics',
+      'EVS / Social Science'
     ],
+    keywords: 'ctet teaching cbse central teacher eligibility paper 1 paper 2 pedagogy evs',
+
+    mockTestsList: [
+      {
+        id: 'ctet-m1',
+        title: 'CTET Paper-1 Primary Full Mock 01',
+        duration: '150 Mins',
+        questions: 150,
+        marks: 150,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'ugc-net',
     name: 'UGC NET',
@@ -995,8 +1607,14 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Dec 2026',
     tierInfo: 'Paper 1 (Teaching & Research) & Paper 2 (Subject)',
     eligibility: 'Master Degree with minimum 55% marks',
-    subjects: ['Teaching & Research Aptitude', 'Higher Education System', 'Information & Communication Tech (ICT)', 'Subject Specialization'],
+    subjects: [
+      'Teaching & Research Aptitude',
+      'Higher Education System',
+      'Information & Communication Tech (ICT)',
+      'Subject Specialization'
+    ],
     keywords: 'ugc net nta assistant professor jrf research aptitude paper 1 paper 2',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -1004,7 +1622,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== MEDICAL & ENGINEERING EXAMS ====================
+
+  // ==========================================================
+  // MEDICAL / ENGINEERING
+  // ==========================================================
+
   {
     id: 'neet-ug',
     name: 'NEET UG',
@@ -1025,16 +1647,32 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Examination',
     tierInfo: 'Pen & Paper Test (OMR Sheet)',
     eligibility: '10+2 with Physics, Chemistry, Biology/Biotechnology',
-    subjects: ['Botany', 'Zoology', 'Physics', 'Chemistry'],
-    keywords: 'neet ug medical mbbs bds biology physics chemistry nta omr',
-    mockTestsList: [
-      { id: 'neet-m1', title: 'NEET UG Full Length Mock Test 01', duration: '200 Mins', questions: 200, marks: 720, status: 'Free' }
+    subjects: [
+      'Botany',
+      'Zoology',
+      'Physics',
+      'Chemistry'
     ],
+    keywords: 'neet ug medical mbbs bds biology physics chemistry nta omr',
+
+    mockTestsList: [
+      {
+        id: 'neet-m1',
+        title: 'NEET UG Full Length Mock Test 01',
+        duration: '200 Mins',
+        questions: 200,
+        marks: 720,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'jee-main',
     name: 'JEE Main',
@@ -1055,22 +1693,37 @@ export const EXAMS_DATA = [
     expectedDate: 'Session 1 & 2 Annual',
     tierInfo: 'Computer Based Test (Physics, Chemistry, Maths)',
     eligibility: '10+2 Pass/Appearing with Physics, Chemistry & Mathematics',
-    subjects: ['Physics', 'Chemistry', 'Mathematics'],
-    keywords: 'jee main engineering entrance iit nit iiit physics chemistry math nta',
-    mockTestsList: [
-      { id: 'jee-m1', title: 'JEE Main Full Length Mock Test 01', duration: '180 Mins', questions: 90, marks: 300, status: 'Free' }
+    subjects: [
+      'Physics',
+      'Chemistry',
+      'Mathematics'
     ],
+    keywords: 'jee main engineering entrance iit nit iiit physics chemistry math nta',
+
+    mockTestsList: [
+      {
+        id: 'jee-m1',
+        title: 'JEE Main Full Length Mock Test 01',
+        duration: '180 Mins',
+        questions: 90,
+        marks: 300,
+        status: 'Free'
+      }
+    ],
+
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'gate-cs',
     name: 'GATE CS & IT',
     fullTitle: 'Graduate Aptitude Test in Engineering - Computer Science',
     category: 'Engineering',
-    description: 'National examination for M.Tech admissions in IITs/NITs and PSU recruitment (IOCL, NTPC, ONGC).',
+    description: 'National examination for M.Tech admissions in IITs/NITs and PSU recruitment.',
     logoText: 'GATE',
     logoBg: '#F0F9FF',
     logoColor: '#0369A1',
@@ -1085,8 +1738,13 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Feb 2027',
     tierInfo: 'Computer Based Test (65 Questions / 100 Marks)',
     eligibility: 'Bachelor degree in Engineering / Technology or Master in relevant Science subject',
-    subjects: ['General Aptitude', 'Engineering Mathematics', 'Computer Science Core (Algorithms, OS, DBMS, Networks)'],
+    subjects: [
+      'General Aptitude',
+      'Engineering Mathematics',
+      'Computer Science Core (Algorithms, OS, DBMS, Networks)'
+    ],
     keywords: 'gate cs it engineering mtech psu computer science algorithms os dbms',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -1094,7 +1752,11 @@ export const EXAMS_DATA = [
     currentAffairsList: []
   },
 
-  // ==================== LAW, INSURANCE, MBA, CUET ====================
+
+  // ==========================================================
+  // LAW / INSURANCE / MBA / CUET
+  // ==========================================================
+
   {
     id: 'clat-ug',
     name: 'CLAT UG',
@@ -1115,14 +1777,23 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Dec 2026',
     tierInfo: 'Off-line Pen & Paper Passage-based Test',
     eligibility: '10+2 or equivalent with minimum 45% marks',
-    subjects: ['English Language', 'Current Affairs & GK', 'Legal Reasoning', 'Logical Reasoning', 'Quantitative Techniques'],
+    subjects: [
+      'English Language',
+      'Current Affairs & GK',
+      'Legal Reasoning',
+      'Logical Reasoning',
+      'Quantitative Techniques'
+    ],
     keywords: 'clat nlu law entrance llb legal reasoning passage based',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'lic-aao',
     name: 'LIC AAO',
@@ -1143,14 +1814,23 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Late 2026',
     tierInfo: 'Prelims, Mains & Interview',
     eligibility: 'Bachelor degree in any discipline',
-    subjects: ['Reasoning Ability', 'Quantitative Aptitude', 'English Language', 'General Knowledge', 'Insurance & Financial Market Awareness'],
+    subjects: [
+      'Reasoning Ability',
+      'Quantitative Aptitude',
+      'English Language',
+      'General Knowledge',
+      'Insurance & Financial Market Awareness'
+    ],
     keywords: 'lic aao insurance assistant administrative officer financial awareness',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'cat',
     name: 'CAT',
@@ -1171,14 +1851,21 @@ export const EXAMS_DATA = [
     expectedDate: 'Expected Nov 2026',
     tierInfo: 'Computer Based Test (VARC, DILR, QA)',
     eligibility: 'Bachelor Degree with minimum 50% marks',
-    subjects: ['Verbal Ability & Reading Comprehension', 'Data Interpretation & Logical Reasoning', 'Quantitative Ability'],
+    subjects: [
+      'Verbal Ability & Reading Comprehension',
+      'Data Interpretation & Logical Reasoning',
+      'Quantitative Ability'
+    ],
     keywords: 'cat iim mba management b school varc dilr quant aptitude',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
     studyNotes: [],
     currentAffairsList: []
   },
+
+
   {
     id: 'cuet-ug',
     name: 'CUET UG',
@@ -1199,8 +1886,13 @@ export const EXAMS_DATA = [
     expectedDate: 'Annual Cycle',
     tierInfo: 'CBT (Language, Domain Subjects & General Test)',
     eligibility: 'Class 12 Pass or appearing from recognized board',
-    subjects: ['Language Section', 'Domain Specific Subjects', 'General Test'],
+    subjects: [
+      'Language Section',
+      'Domain Specific Subjects',
+      'General Test'
+    ],
     keywords: 'cuet ug central university admissions du jnu bhu domain test ncert',
+
     mockTestsList: [],
     practiceSets: [],
     pyqList: [],
@@ -1209,50 +1901,135 @@ export const EXAMS_DATA = [
   }
 ];
 
+
+/* ============================================================
+   LOCAL STORE CONTROL
+   ============================================================ */
+
 /**
- * Data Access Helpers
+ * Local hardcoded exams are disabled for public website.
+ */
+export const LOCAL_EXAMS_ENABLED = false;
+
+
+/* ============================================================
+   PUBLIC EXAM ACCESS FUNCTIONS
+   ============================================================ */
+
+/**
+ * Get all exams.
+ *
+ * IMPORTANT:
+ * Local EXAMS_DATA website ko expose nahi kiya ja raha.
  */
 export function getAllExams() {
-  return EXAMS_DATA;
+  return [];
 }
 
+
+/**
+ * Get one exam by ID.
+ *
+ * Local exam store disabled hai.
+ */
 export function getExamById(id) {
-  return EXAMS_DATA.find(e => e.id === id) || null;
+  return null;
 }
 
+
+/**
+ * Filter exams.
+ *
+ * Local exam store disabled hai.
+ */
 export function filterExams(category = 'All', searchQuery = '') {
-  const query = (searchQuery || '').trim().toLowerCase();
+  return [];
+}
 
-  return EXAMS_DATA.filter(exam => {
-    // Category match
-    let matchesCategory = true;
-    if (category === 'Popular') {
-      matchesCategory = exam.isPopular === true;
-    } else if (category === 'State Exams') {
-      matchesCategory = exam.category === 'State PSC' || exam.category === 'State Government Jobs' || exam.id.startsWith('bihar-');
-    } else if (category !== 'All') {
-      matchesCategory = exam.category.toLowerCase() === category.toLowerCase();
+
+/**
+ * Get featured exams.
+ */
+export function getFeaturedExams() {
+  return [];
+}
+
+
+/**
+ * Get popular exams.
+ */
+export function getPopularExams() {
+  return [];
+}
+
+
+/**
+ * Get upcoming exams.
+ */
+export function getUpcomingExams() {
+  return [];
+}
+
+
+/* ============================================================
+   OPTIONAL ADMIN / INTERNAL ACCESS
+   ============================================================
+
+   Agar future me kisi internal/admin code ko old local
+   data access karna ho, to ye function use kar sakte ho.
+
+   Public website ke normal functions EXAMS_DATA return nahi
+   karte.
+   ============================================================ */
+
+export function getLocalExamDataForAdmin() {
+  return [...EXAMS_DATA];
+}
+
+
+/* ============================================================
+   DEBUG HELPERS
+   ============================================================ */
+
+export function isLocalExamStoreEnabled() {
+  return LOCAL_EXAMS_ENABLED;
+}
+
+
+/**
+ * Clear any RankHub exam-related localStorage data.
+ *
+ * NOTE:
+ * Ye sirf known exam-related keys remove karta hai.
+ * localStorage.clear() nahi karta.
+ */
+export function clearLocalExamStorage() {
+  const examStorageKeys = [
+    'exams',
+    'examData',
+    'EXAMS_DATA',
+    'rankhub-exams',
+    'rankhub-exam-data',
+    'rankhub_exams',
+    'rankhub_exam_data',
+    'selectedExam',
+    'selectedExamId',
+    'currentExam',
+    'currentExamId',
+    'exam-store',
+    'examStore'
+  ];
+
+  examStorageKeys.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.warn(`Unable to remove localStorage key: ${key}`, error);
     }
-
-    // Search query match
-    let matchesSearch = true;
-    if (query) {
-      const searchableText = `${exam.name} ${exam.fullTitle} ${exam.category} ${exam.description} ${exam.keywords}`.toLowerCase();
-      matchesSearch = searchableText.includes(query);
-    }
-
-    return matchesCategory && matchesSearch;
   });
 }
 
-export function getFeaturedExams() {
-  return EXAMS_DATA.filter(e => e.isFeatured);
-}
 
-export function getPopularExams() {
-  return EXAMS_DATA.filter(e => e.isPopular);
-}
-
-export function getUpcomingExams() {
-  return EXAMS_DATA.filter(e => e.isUpcoming);
-}
+/* ============================================================
+   END
+   ============================================================ */
