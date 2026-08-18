@@ -5,19 +5,20 @@
 // FINAL FIXED VERSION
 // ============================================================
 //
-// DATA SOURCE:
-//     ./exam-store.js
-//
-// FIRESTORE:
-//     exams
-//
-// ONLY:
-//     status === "published" exams are displayed.
+// IMPORTANT:
+// - ./exam.js dependency REMOVED
+// - Direct Firestore se exams load honge
+// - Collection: exams
+// - Only status === "published" displayed
 // ============================================================
 
 import {
-    getAllExams
-} from "./exam-store.js";
+    db,
+    collection,
+    getDocs,
+    query,
+    where
+} from "./firebase.js";
 
 
 // ============================================================
@@ -71,33 +72,47 @@ function initDOM() {
 
     popularGrid = $("popularExamsGrid");
 
-    categoryContainer = $("examCategoryChipsContainer");
+    categoryContainer =
+        $("examCategoryChipsContainer");
 
-    allGrid = $("allExamsGrid");
+    allGrid =
+        $("allExamsGrid");
 
-    searchInput = $("examSearchInput");
+    searchInput =
+        $("examSearchInput");
 
-    clearSearchBtn = $("clearSearchInputBtn");
+    clearSearchBtn =
+        $("clearSearchInputBtn");
 
-    searchCountLabel = $("searchResultsCountLabel");
+    searchCountLabel =
+        $("searchResultsCountLabel");
 
-    emptyState = $("examEmptyStateContainer");
+    emptyState =
+        $("examEmptyStateContainer");
 
-    emptyResetBtn = $("emptyStateResetBtn");
+    emptyResetBtn =
+        $("emptyStateResetBtn");
 
-    popularSection = $("popularExamsSection");
+    popularSection =
+        $("popularExamsSection");
 
-    categoriesSection = $("examCategoriesSection");
+    categoriesSection =
+        $("examCategoriesSection");
 
-    allSection = $("allExamsSection");
+    allSection =
+        $("allExamsSection");
 
-    modalBackdrop = $("examModalBackdrop");
+    modalBackdrop =
+        $("examModalBackdrop");
 
-    detailModal = $("examDetailModal");
+    detailModal =
+        $("examDetailModal");
 
-    modalCloseBtn = $("examModalCloseBtn");
+    modalCloseBtn =
+        $("examModalCloseBtn");
 
-    modalBody = $("examModalBody");
+    modalBody =
+        $("examModalBody");
 }
 
 
@@ -127,7 +142,10 @@ function escapeHTML(value) {
 // SAFE TEXT
 // ============================================================
 
-function safeText(value, fallback = "") {
+function safeText(
+    value,
+    fallback = ""
+) {
 
     if (
         value === null ||
@@ -136,7 +154,8 @@ function safeText(value, fallback = "") {
         return fallback;
     }
 
-    const text = String(value).trim();
+    const text =
+        String(value).trim();
 
     return text || fallback;
 }
@@ -148,7 +167,8 @@ function safeText(value, fallback = "") {
 
 function makeSlug(exam) {
 
-    const slug = safeText(exam?.slug);
+    const slug =
+        safeText(exam?.slug);
 
     if (slug) {
         return slug;
@@ -164,7 +184,10 @@ function makeSlug(exam) {
 
 function normalizeCategory(category) {
 
-    return safeText(category, "Other");
+    return safeText(
+        category,
+        "Other"
+    );
 }
 
 
@@ -183,22 +206,20 @@ function categoryKey(category) {
 
 function getAccessBadge(exam) {
 
-    if (
-        exam?.accessType === "premium"
-    ) {
+    const premium =
+        exam?.accessType === "premium";
 
-        return `
+    return premium
+        ? `
             <span class="exam-access-badge premium">
                 PRO
             </span>
+        `
+        : `
+            <span class="exam-access-badge free">
+                FREE
+            </span>
         `;
-    }
-
-    return `
-        <span class="exam-access-badge free">
-            FREE
-        </span>
-    `;
 }
 
 
@@ -208,43 +229,48 @@ function getAccessBadge(exam) {
 
 function getExamLogo(exam) {
 
-    const logo = safeText(exam?.logoUrl);
+    const logo =
+        safeText(exam?.logoUrl);
 
-    const name = safeText(
-        exam?.name,
-        "Exam"
-    );
+    const name =
+        safeText(
+            exam?.name,
+            "Exam"
+        );
 
-    if (logo) {
+    const firstLetter =
+        escapeHTML(
+            name.charAt(0).toUpperCase()
+        );
+
+    if (!logo) {
 
         return `
-            <img
-                class="exam-card-logo"
-                src="${escapeHTML(logo)}"
-                alt="${escapeHTML(name)}"
-                loading="lazy"
-                onerror="
-                    this.style.display='none';
-                    this.nextElementSibling.style.display='flex';
-                "
-            >
-
-            <div
-                class="exam-card-logo-fallback"
-                style="display:none;"
-            >
-                ${escapeHTML(
-                    name.charAt(0).toUpperCase()
-                )}
+            <div class="exam-card-logo-fallback">
+                ${firstLetter}
             </div>
         `;
     }
 
     return `
-        <div class="exam-card-logo-fallback">
-            ${escapeHTML(
-                name.charAt(0).toUpperCase()
-            )}
+        <img
+            class="exam-card-logo"
+            src="${escapeHTML(logo)}"
+            alt="${escapeHTML(name)}"
+            loading="lazy"
+            onerror="
+                this.style.display='none';
+                if(this.nextElementSibling){
+                    this.nextElementSibling.style.display='flex';
+                }
+            "
+        >
+
+        <div
+            class="exam-card-logo-fallback"
+            style="display:none;"
+        >
+            ${firstLetter}
         </div>
     `;
 }
@@ -256,32 +282,44 @@ function getExamLogo(exam) {
 
 function createExamCard(exam) {
 
-    const id = safeText(exam?.id);
+    const id =
+        safeText(exam?.id);
 
-    const name = safeText(
-        exam?.name,
-        "Untitled Exam"
-    );
+    const slug =
+        makeSlug(exam);
 
-    const category = normalizeCategory(
-        exam?.category
-    );
+    const name =
+        safeText(
+            exam?.name,
+            "Untitled Exam"
+        );
 
-    const description = safeText(
-        exam?.shortDescription,
-        "Start preparing for this exam with RankHub."
-    );
+    const category =
+        normalizeCategory(
+            exam?.category
+        );
+
+    const description =
+        safeText(
+            exam?.shortDescription ||
+            exam?.description,
+            "Start preparing for this exam with RankHub."
+        );
 
     const questionCount =
-        Number(exam?.questionCount) || 0;
+        Number(
+            exam?.questionCount
+        ) || 0;
 
     const subjectCount =
-        Number(exam?.subjectCount) || 0;
+        Number(
+            exam?.subjectCount
+        ) || 0;
 
     const testCount =
-        Number(exam?.testCount) || 0;
-
-    const slug = makeSlug(exam);
+        Number(
+            exam?.testCount
+        ) || 0;
 
     return `
         <article
@@ -303,6 +341,7 @@ function createExamCard(exam) {
 
             </div>
 
+
             <div class="exam-card-content">
 
                 <div class="exam-card-category">
@@ -318,6 +357,7 @@ function createExamCard(exam) {
                 </p>
 
             </div>
+
 
             <div class="exam-card-stats">
 
@@ -337,6 +377,7 @@ function createExamCard(exam) {
                 </span>
 
             </div>
+
 
             <div class="exam-card-footer">
 
@@ -363,7 +404,11 @@ function loadingCards(count = 6) {
 
     let html = "";
 
-    for (let i = 0; i < count; i++) {
+    for (
+        let i = 0;
+        i < count;
+        i++
+    ) {
 
         html += `
             <div class="exam-card exam-loading-card">
@@ -373,15 +418,23 @@ function loadingCards(count = 6) {
                 </div>
 
                 <div class="exam-card-content">
+
                     <div class="exam-skeleton line small"></div>
+
                     <div class="exam-skeleton line"></div>
+
                     <div class="exam-skeleton line"></div>
+
                 </div>
 
                 <div class="exam-card-stats">
+
                     <div class="exam-skeleton stat"></div>
+
                     <div class="exam-skeleton stat"></div>
+
                     <div class="exam-skeleton stat"></div>
+
                 </div>
 
             </div>
@@ -389,6 +442,186 @@ function loadingCards(count = 6) {
     }
 
     return html;
+}
+
+
+// ============================================================
+// LOAD EXAMS FROM FIRESTORE
+// ============================================================
+
+async function getAllExams() {
+
+    console.log(
+        "RankHub: Loading published exams from Firestore..."
+    );
+
+    if (!db) {
+
+        throw new Error(
+            "Firebase Firestore database is not initialized."
+        );
+    }
+
+
+    const examsRef =
+        collection(
+            db,
+            "exams"
+        );
+
+
+    let snapshot;
+
+
+    // --------------------------------------------------------
+    // First try published query
+    // --------------------------------------------------------
+
+    try {
+
+        const publishedQuery =
+            query(
+                examsRef,
+                where(
+                    "status",
+                    "==",
+                    "published"
+                )
+            );
+
+        snapshot =
+            await getDocs(
+                publishedQuery
+            );
+
+    } catch (error) {
+
+        console.warn(
+            "RankHub: Published query failed. Loading exams and filtering locally.",
+            error
+        );
+
+        snapshot =
+            await getDocs(
+                examsRef
+            );
+    }
+
+
+    const exams = [];
+
+
+    snapshot.forEach(
+        docSnap => {
+
+            const data =
+                docSnap.data() || {};
+
+            const exam = {
+
+                id:
+                    safeText(
+                        data.id,
+                        docSnap.id
+                    ),
+
+                ...data,
+
+                id:
+                    safeText(
+                        data.id,
+                        docSnap.id
+                    )
+
+            };
+
+
+            // ------------------------------------------------
+            // ONLY PUBLISHED
+            // ------------------------------------------------
+
+            const status =
+                safeText(
+                    exam.status
+                ).toLowerCase();
+
+
+            if (
+                status === "published"
+            ) {
+
+                exams.push(
+                    exam
+                );
+
+            }
+
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // SORT
+    // --------------------------------------------------------
+
+    exams.sort(
+        (a, b) => {
+
+            const aPopular =
+                a.isPopular === true
+                    ? 1
+                    : 0;
+
+            const bPopular =
+                b.isPopular === true
+                    ? 1
+                    : 0;
+
+            if (
+                aPopular !== bPopular
+            ) {
+
+                return (
+                    bPopular -
+                    aPopular
+                );
+
+            }
+
+
+            return safeText(
+                a.name
+            ).localeCompare(
+                safeText(b.name)
+            );
+
+        }
+    );
+
+
+    console.log(
+        `RankHub: ${exams.length} published exams found.`
+    );
+
+
+    return exams;
+}
+
+
+// ============================================================
+// REFRESH EXAMS
+// ============================================================
+
+async function refreshExams() {
+
+    allExams =
+        await getAllExams();
+
+    renderInitial();
+
+    return [
+        ...allExams
+    ];
 }
 
 
@@ -402,6 +635,7 @@ function showLoadError(error) {
         "RankHub: Failed to load exams:",
         error
     );
+
 
     if (popularGrid) {
 
@@ -418,7 +652,7 @@ function showLoadError(error) {
 
                 <p>
                     Exams could not be loaded right now.
-                    Please try again.
+                    Please refresh the page.
                 </p>
 
                 <button
@@ -433,24 +667,35 @@ function showLoadError(error) {
         `;
     }
 
+
     if (allGrid) {
         allGrid.innerHTML = "";
     }
 
-    const retry = $("examRetryBtn");
+
+    const retry =
+        $("examRetryBtn");
+
 
     if (retry) {
 
         retry.addEventListener(
             "click",
-            () => loadPageData(true)
+            () => {
+
+                loadPageData(
+                    true
+                );
+
+            }
         );
+
     }
 }
 
 
 // ============================================================
-// RENDER POPULAR
+// POPULAR EXAMS
 // ============================================================
 
 function renderPopularExams(exams) {
@@ -458,6 +703,7 @@ function renderPopularExams(exams) {
     if (!popularGrid) {
         return;
     }
+
 
     if (!exams.length) {
 
@@ -470,6 +716,7 @@ function renderPopularExams(exams) {
         return;
     }
 
+
     popularGrid.innerHTML =
         exams
             .map(createExamCard)
@@ -478,7 +725,7 @@ function renderPopularExams(exams) {
 
 
 // ============================================================
-// RENDER ALL
+// ALL EXAMS
 // ============================================================
 
 function renderAllExams(exams) {
@@ -487,12 +734,14 @@ function renderAllExams(exams) {
         return;
     }
 
+
     if (!exams.length) {
 
         allGrid.innerHTML = "";
 
         return;
     }
+
 
     allGrid.innerHTML =
         exams
@@ -507,36 +756,56 @@ function renderAllExams(exams) {
 
 function getAvailableCategories(exams) {
 
-    const map = new Map();
+    const map =
+        new Map();
 
-    map.set("all", "All");
 
-    for (const exam of exams) {
+    map.set(
+        "all",
+        "All"
+    );
+
+
+    for (
+        const exam of exams
+    ) {
 
         const category =
             normalizeCategory(
-                exam?.category
+                exam.category
             );
 
-        if (!category) {
-            continue;
-        }
-
         const key =
-            categoryKey(category);
+            categoryKey(
+                category
+            );
 
-        if (key === "popular") {
+
+        if (!key) {
             continue;
         }
 
-        if (!map.has(key)) {
+
+        if (
+            key === "popular"
+        ) {
+            continue;
+        }
+
+
+        if (
+            !map.has(key)
+        ) {
 
             map.set(
                 key,
                 category
             );
+
         }
+
     }
+
 
     return Array.from(
         map.values()
@@ -554,46 +823,66 @@ function renderCategories(exams) {
         return;
     }
 
+
     const categories =
-        getAvailableCategories(exams);
+        getAvailableCategories(
+            exams
+        );
+
 
     categoryContainer.innerHTML =
         categories
-            .map(category => {
+            .map(
+                category => {
 
-                const active =
-                    categoryKey(currentCategory) ===
-                    categoryKey(category);
+                    const active =
+                        categoryKey(
+                            currentCategory
+                        ) ===
+                        categoryKey(
+                            category
+                        );
 
-                return `
-                    <button
-                        type="button"
-                        class="exam-category-chip ${active ? "active" : ""}"
-                        data-category="${escapeHTML(category)}"
-                    >
-                        ${escapeHTML(category)}
-                    </button>
-                `;
-            })
+
+                    return `
+                        <button
+                            type="button"
+                            class="exam-category-chip ${
+                                active
+                                    ? "active"
+                                    : ""
+                            }"
+                            data-category="${escapeHTML(category)}"
+                        >
+                            ${escapeHTML(category)}
+                        </button>
+                    `;
+                }
+            )
             .join("");
+
 
     categoryContainer
         .querySelectorAll(
             ".exam-category-chip"
         )
-        .forEach(button => {
+        .forEach(
+            button => {
 
-            button.addEventListener(
-                "click",
-                () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    setCategory(
-                        button.dataset.category ||
-                        "All"
-                    );
-                }
-            );
-        });
+                        setCategory(
+                            button.dataset.category ||
+                            "All"
+                        );
+
+                    }
+                );
+
+            }
+        );
 }
 
 
@@ -610,6 +899,7 @@ function renderSearchCount(
         return;
     }
 
+
     if (!searchActive) {
 
         searchCountLabel.style.display =
@@ -621,11 +911,16 @@ function renderSearchCount(
         return;
     }
 
+
     searchCountLabel.style.display =
         "block";
 
     searchCountLabel.textContent =
-        `${count} exam${count === 1 ? "" : "s"} found`;
+        `${count} exam${
+            count === 1
+                ? ""
+                : "s"
+        } found`;
 }
 
 
@@ -638,6 +933,7 @@ function showEmptyState(show) {
     if (!emptyState) {
         return;
     }
+
 
     emptyState.style.display =
         show
@@ -653,7 +949,10 @@ function showEmptyState(show) {
 function updateSections() {
 
     const hasSearch =
-        !!safeText(currentSearch);
+        !!safeText(
+            currentSearch
+        );
+
 
     if (popularSection) {
 
@@ -663,12 +962,18 @@ function updateSections() {
                 : "";
     }
 
+
     if (categoriesSection) {
-        categoriesSection.style.display = "";
+
+        categoriesSection.style.display =
+            "";
     }
 
+
     if (allSection) {
-        allSection.style.display = "";
+
+        allSection.style.display =
+            "";
     }
 }
 
@@ -680,71 +985,78 @@ function updateSections() {
 function applyFilters() {
 
     const search =
-        safeText(currentSearch)
-            .toLowerCase();
+        safeText(
+            currentSearch
+        ).toLowerCase();
 
-    const category =
+
+    const selectedCategory =
         safeText(
             currentCategory,
             "All"
         );
 
+
     let filtered =
         [...allExams];
 
 
-    // CATEGORY FILTER
+    // CATEGORY
 
     if (
-        category &&
-        categoryKey(category) !== "all"
+        categoryKey(
+            selectedCategory
+        ) !== "all"
     ) {
 
         const selectedKey =
-            categoryKey(category);
+            categoryKey(
+                selectedCategory
+            );
+
 
         filtered =
-            filtered.filter(exam => {
-
-                const examCategory =
+            filtered.filter(
+                exam =>
                     categoryKey(
-                        exam?.category
-                    );
-
-                return (
-                    examCategory ===
+                        exam.category
+                    ) ===
                     selectedKey
-                );
-            });
+            );
     }
 
 
-    // SEARCH FILTER
+    // SEARCH
 
     if (search) {
 
         filtered =
-            filtered.filter(exam => {
+            filtered.filter(
+                exam => {
 
-                const searchable = [
+                    const searchable =
+                        [
+                            exam.name,
+                            exam.slug,
+                            exam.category,
+                            exam.shortDescription,
+                            exam.description
+                        ]
+                            .filter(Boolean)
+                            .join(" ")
+                            .toLowerCase();
 
-                    exam?.name,
-                    exam?.slug,
-                    exam?.category,
-                    exam?.shortDescription,
-                    exam?.description
 
-                ]
-                    .filter(Boolean)
-                    .join(" ")
-                    .toLowerCase();
-
-                return searchable.includes(search);
-            });
+                    return searchable.includes(
+                        search
+                    );
+                }
+            );
     }
 
 
-    currentExams = filtered;
+    currentExams =
+        filtered;
 
 
     renderAllExams(
@@ -788,9 +1100,11 @@ function setCategory(category) {
             "All"
         );
 
+
     renderCategories(
         allExams
     );
+
 
     applyFilters();
 
@@ -816,7 +1130,7 @@ function setCategory(category) {
 
 
 // ============================================================
-// SEARCH INPUT
+// SEARCH
 // ============================================================
 
 function handleSearchInput() {
@@ -826,8 +1140,11 @@ function handleSearchInput() {
             ? searchInput.value
             : "";
 
+
     if (
-        safeText(currentSearch)
+        safeText(
+            currentSearch
+        )
     ) {
 
         currentCategory =
@@ -837,6 +1154,7 @@ function handleSearchInput() {
             allExams
         );
     }
+
 
     applyFilters();
 }
@@ -848,23 +1166,31 @@ function handleSearchInput() {
 
 function clearSearch() {
 
-    currentSearch = "";
+    currentSearch =
+        "";
+
+    currentCategory =
+        "All";
+
 
     if (searchInput) {
         searchInput.value = "";
     }
 
+
     if (clearSearchBtn) {
-        clearSearchBtn.style.display = "none";
+        clearSearchBtn.style.display =
+            "none";
     }
 
-    currentCategory = "All";
 
     renderCategories(
         allExams
     );
 
+
     applyFilters();
+
 
     if (searchInput) {
         searchInput.focus();
@@ -881,6 +1207,7 @@ function openExam(exam) {
     if (!exam) {
         return;
     }
+
 
     const slug =
         makeSlug(exam);
@@ -916,12 +1243,14 @@ function openExam(exam) {
                 window.location.href
             );
 
+
         if (slug) {
 
             url.searchParams.set(
                 "exam",
                 slug
             );
+
 
             window.history.replaceState(
                 {
@@ -939,7 +1268,7 @@ function openExam(exam) {
 
 
 // ============================================================
-// OPEN MODAL
+// OPEN EXAM MODAL
 // ============================================================
 
 function openExamModal(exam) {
@@ -950,7 +1279,9 @@ function openExamModal(exam) {
         !modalBody
     ) {
 
-        navigateToExam(exam);
+        navigateToExam(
+            exam
+        );
 
         return;
     }
@@ -958,41 +1289,47 @@ function openExamModal(exam) {
 
     const name =
         safeText(
-            exam?.name,
+            exam.name,
             "Exam"
         );
 
+
     const category =
         safeText(
-            exam?.category,
+            exam.category,
             "General"
         );
 
+
     const description =
         safeText(
-            exam?.description ||
-            exam?.shortDescription,
+            exam.description ||
+            exam.shortDescription,
             "Prepare smarter with RankHub."
         );
 
+
     const access =
-        exam?.accessType === "premium"
+        exam.accessType === "premium"
             ? "RankHub Pass"
             : "Free";
 
+
     const questionCount =
         Number(
-            exam?.questionCount
+            exam.questionCount
         ) || 0;
+
 
     const subjectCount =
         Number(
-            exam?.subjectCount
+            exam.subjectCount
         ) || 0;
+
 
     const testCount =
         Number(
-            exam?.testCount
+            exam.testCount
         ) || 0;
 
 
@@ -1022,27 +1359,41 @@ function openExamModal(exam) {
             <div class="exam-detail-stats">
 
                 <div class="exam-detail-stat">
-                    <strong>${subjectCount}</strong>
-                    <span>Subjects</span>
+                    <strong>
+                        ${subjectCount}
+                    </strong>
+                    <span>
+                        Subjects
+                    </span>
                 </div>
 
                 <div class="exam-detail-stat">
-                    <strong>${questionCount}</strong>
-                    <span>Questions</span>
+                    <strong>
+                        ${questionCount}
+                    </strong>
+                    <span>
+                        Questions
+                    </span>
                 </div>
 
                 <div class="exam-detail-stat">
-                    <strong>${testCount}</strong>
-                    <span>Tests</span>
+                    <strong>
+                        ${testCount}
+                    </strong>
+                    <span>
+                        Tests
+                    </span>
                 </div>
 
             </div>
 
             <div class="exam-detail-access">
+
                 Access:
                 <strong>
                     ${escapeHTML(access)}
                 </strong>
+
             </div>
 
             <div class="exam-detail-actions">
@@ -1073,9 +1424,11 @@ function openExamModal(exam) {
         "active"
     );
 
+
     modalBackdrop.classList.add(
         "active"
     );
+
 
     document.body.classList.add(
         "exam-modal-open"
@@ -1085,11 +1438,18 @@ function openExamModal(exam) {
     const startButton =
         $("startExamBtn");
 
+
     if (startButton) {
 
         startButton.addEventListener(
             "click",
-            () => navigateToExam(exam)
+            () => {
+
+                navigateToExam(
+                    exam
+                );
+
+            }
         );
     }
 
@@ -1097,11 +1457,18 @@ function openExamModal(exam) {
     const viewButton =
         $("viewExamPageBtn");
 
+
     if (viewButton) {
 
         viewButton.addEventListener(
             "click",
-            () => navigateToExam(exam)
+            () => {
+
+                navigateToExam(
+                    exam
+                );
+
+            }
         );
     }
 }
@@ -1116,6 +1483,7 @@ function navigateToExam(exam) {
     const slug =
         makeSlug(exam);
 
+
     if (!slug) {
 
         console.warn(
@@ -1125,6 +1493,7 @@ function navigateToExam(exam) {
 
         return;
     }
+
 
     window.location.href =
         `./exam.html?exam=${encodeURIComponent(slug)}`;
@@ -1144,12 +1513,14 @@ function closeExamModal() {
         );
     }
 
+
     if (modalBackdrop) {
 
         modalBackdrop.classList.remove(
             "active"
         );
     }
+
 
     document.body.classList.remove(
         "exam-modal-open"
@@ -1163,9 +1534,11 @@ function closeExamModal() {
                 window.location.href
             );
 
+
         url.searchParams.delete(
             "exam"
         );
+
 
         window.history.replaceState(
             {},
@@ -1190,22 +1563,29 @@ function handleCardInteraction(event) {
             ".exam-card"
         );
 
+
     if (!card) {
         return;
     }
 
+
     const id =
         card.dataset.examId;
+
 
     const slug =
         card.dataset.examSlug;
 
+
     const exam =
         allExams.find(
             item =>
-                safeText(item?.id) === id ||
-                makeSlug(item) === slug
+                safeText(item.id) ===
+                    safeText(id) ||
+                makeSlug(item) ===
+                    safeText(slug)
         );
+
 
     if (!exam) {
 
@@ -1220,7 +1600,10 @@ function handleCardInteraction(event) {
         return;
     }
 
-    openExam(exam);
+
+    openExam(
+        exam
+    );
 }
 
 
@@ -1237,16 +1620,20 @@ function handleCardKeyboard(event) {
         return;
     }
 
+
     const card =
         event.target.closest(
             ".exam-card"
         );
 
+
     if (!card) {
         return;
     }
 
+
     event.preventDefault();
+
 
     handleCardInteraction(
         event
@@ -1255,7 +1642,7 @@ function handleCardKeyboard(event) {
 
 
 // ============================================================
-// BIND CARD EVENTS
+// CARD EVENTS
 // ============================================================
 
 function bindCardEvents() {
@@ -1273,6 +1660,7 @@ function bindCardEvents() {
         );
     }
 
+
     if (allGrid) {
 
         allGrid.addEventListener(
@@ -1289,7 +1677,7 @@ function bindCardEvents() {
 
 
 // ============================================================
-// BIND SEARCH
+// SEARCH EVENTS
 // ============================================================
 
 function bindSearchEvents() {
@@ -1301,6 +1689,7 @@ function bindSearchEvents() {
             handleSearchInput
         );
 
+
         searchInput.addEventListener(
             "keydown",
             event => {
@@ -1310,10 +1699,13 @@ function bindSearchEvents() {
                 ) {
 
                     clearSearch();
+
                 }
+
             }
         );
     }
+
 
     if (clearSearchBtn) {
 
@@ -1322,6 +1714,7 @@ function bindSearchEvents() {
             clearSearch
         );
     }
+
 
     if (emptyResetBtn) {
 
@@ -1334,7 +1727,7 @@ function bindSearchEvents() {
 
 
 // ============================================================
-// BIND MODAL
+// MODAL EVENTS
 // ============================================================
 
 function bindModalEvents() {
@@ -1370,7 +1763,9 @@ function bindModalEvents() {
             ) {
 
                 closeExamModal();
+
             }
+
         }
     );
 }
@@ -1382,8 +1777,12 @@ function bindModalEvents() {
 
 function renderInitial() {
 
-    currentCategory = "All";
-    currentSearch = "";
+    currentCategory =
+        "All";
+
+    currentSearch =
+        "";
+
 
     renderCategories(
         allExams
@@ -1393,9 +1792,9 @@ function renderInitial() {
     const popular =
         allExams.filter(
             exam =>
-                exam?.isPopular === true ||
+                exam.isPopular === true ||
                 categoryKey(
-                    exam?.category
+                    exam.category
                 ) === "popular"
         );
 
@@ -1445,89 +1844,52 @@ async function loadPageData(
                 loadingCards(4);
         }
 
+
         if (allGrid) {
 
             allGrid.innerHTML =
                 loadingCards(8);
         }
 
-        showEmptyState(false);
+
+        showEmptyState(
+            false
+        );
 
 
-        // ----------------------------------------------------
-        // LOAD EXAMS
-        // ----------------------------------------------------
+        if (forceRefresh) {
 
-        let exams;
-
-        if (
-            forceRefresh
-        ) {
-
-            /*
-             * If exam-store.js provides refreshExams(),
-             * use it.
-             *
-             * Otherwise fallback to getAllExams().
-             */
-
-            try {
-
-                const module =
-                    await import(
-                        "./exam-store.js"
-                    );
-
-                if (
-                    typeof module.refreshExams ===
-                    "function"
-                ) {
-
-                    exams =
-                        await module.refreshExams();
-
-                } else {
-
-                    exams =
-                        await getAllExams();
-                }
-
-            } catch {
-
-                exams =
-                    await getAllExams();
-            }
-
-        } else {
-
-            exams =
-                await getAllExams();
+            console.log(
+                "RankHub: Refreshing exams..."
+            );
         }
 
 
-        // ----------------------------------------------------
-        // SAFETY
-        // ----------------------------------------------------
-
         allExams =
-            Array.isArray(exams)
-                ? exams
-                : [];
+            await getAllExams();
 
 
-        // ----------------------------------------------------
-        // RENDER
-        // ----------------------------------------------------
+        if (
+            !Array.isArray(
+                allExams
+            )
+        ) {
+
+            allExams = [];
+
+        }
+
 
         renderInitial();
 
 
         console.log(
-            `RankHub: ${allExams.length} exams rendered.`
+            `RankHub: ${allExams.length} exams rendered on user website.`
         );
 
 
-        initialized = true;
+        initialized =
+            true;
 
 
         openExamFromURL();
@@ -1554,12 +1916,15 @@ function openExamFromURL() {
                 window.location.search
             );
 
+
         const examValue =
             params.get("exam");
+
 
         if (!examValue) {
             return;
         }
+
 
         const decoded =
             decodeURIComponent(
@@ -1567,29 +1932,16 @@ function openExamFromURL() {
             );
 
 
-        const searchValue =
-            decoded.toLowerCase();
-
-
         const exam =
             allExams.find(
-                item => {
+                item =>
+                    safeText(item.id)
+                        .toLowerCase() ===
+                        decoded.toLowerCase() ||
 
-                    const id =
-                        safeText(
-                            item?.id
-                        ).toLowerCase();
-
-                    const slug =
-                        safeText(
-                            item?.slug
-                        ).toLowerCase();
-
-                    return (
-                        id === searchValue ||
-                        slug === searchValue
-                    );
-                }
+                    safeText(item.slug)
+                        .toLowerCase() ===
+                        decoded.toLowerCase()
             );
 
 
@@ -1597,7 +1949,11 @@ function openExamFromURL() {
 
             setTimeout(
                 () => {
-                    openExamModal(exam);
+
+                    openExamModal(
+                        exam
+                    );
+
                 },
                 100
             );
@@ -1619,7 +1975,23 @@ function openExamFromURL() {
 
 export async function refreshExamPage() {
 
-    await loadPageData(true);
+    try {
+
+        allExams =
+            await refreshExams();
+
+
+        return allExams;
+
+    } catch (error) {
+
+        console.error(
+            "RankHub: Exam refresh failed:",
+            error
+        );
+
+        throw error;
+    }
 }
 
 
@@ -1636,7 +2008,7 @@ export function getCurrentExams() {
 
 
 // ============================================================
-// GET ALL LOADED EXAMS
+// GET LOADED EXAMS
 // ============================================================
 
 export function getLoadedExams() {
@@ -1677,13 +2049,16 @@ async function init() {
         return;
     }
 
+
     initDOM();
+
 
     bindSearchEvents();
 
     bindCardEvents();
 
     bindModalEvents();
+
 
     await loadPageData();
 }
@@ -1748,6 +2123,7 @@ if (
 
         closeModal:
             closeExamModal
+
     };
 }
 
