@@ -1,247 +1,1278 @@
-import { getCurrentUser } from './firebase.js';
-/**
- * RankHub - Exams Section Logic
- * Full implementation supporting 15+ categories, real-time search, category filters,
- * skeleton loading, empty state, and direct navigation to Exam Detail Page.
- */
+// ============================================================
+// RANKHUB - USER WEBSITE EXAM DATA STORE
+// exam.js
+// FINAL FIRESTORE VERSION
+// ============================================================
+//
+// Firestore collection:
+//      exams
+//
+// Expected document fields:
+//
+// name
+// slug
+// category
+// shortDescription
+// description
+// logoUrl
+// bannerUrl
+// accessType
+// status
+// displayOrder
+// subjectCount
+// featured
+// isPopular
+// isUpcoming
+// createdAt
+// updatedAt
+//
+// ============================================================
 
-import { CATEGORIES, EXAMS_DATA, filterExams } from './exam-store.js';
+import {
+    collection,
+    getDocs,
+    getDoc,
+    doc,
+    query,
+    where,
+    orderBy
+} from "firebase/firestore";
 
-document.addEventListener('DOMContentLoaded', async () => {
-  
-  const firebaseUser = await getCurrentUser();
-  if (!firebaseUser) return; // auth-guard handles redirect
-  
-  let currentUser = {
-    uid: firebaseUser.uid,
-    email: firebaseUser.email,
-    name: firebaseUser.displayName || firebaseUser.email.split('@')[0]
-  };
-  try {
-    const saved = localStorage.getItem('rankhub_user');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      currentUser = Object.assign(currentUser, parsed);
-    }
-  } catch(e) {}
-    
+import { db } from "./firebase-init.js";
 
-  const examsAppContainer = document.getElementById('examsAppContainer');
-  if (!examsAppContainer) return;
 
-  let currentCategory = 'All';
-  let searchQuery = '';
+// ============================================================
+// CATEGORIES
+// ============================================================
 
-  const searchInput = document.getElementById('examSearchInput');
-  const clearSearchBtn = document.getElementById('clearSearchInputBtn');
-  const categoryChipsContainer = document.getElementById('examCategoryChipsContainer');
-  
-  const popularSection = document.getElementById('popularExamsSection');
-  const popularSectionTitle = document.getElementById('popularSectionTitle');
-  const popularSectionSub = document.getElementById('popularSectionSub');
-  const popularGrid = document.getElementById('popularExamsGrid');
+export const CATEGORIES = [
+    "All",
+    "Popular",
+    "Banking",
+    "SSC",
+    "Railway",
+    "UPSC",
+    "State PSC",
+    "Police",
+    "Defence",
+    "Teaching",
+    "Medical",
+    "Engineering",
+    "Law",
+    "Insurance",
+    "MBA",
+    "CUET",
+    "State Government Jobs"
+];
 
-  const allExamsSection = document.getElementById('allExamsSection');
-  const allExamsGrid = document.getElementById('allExamsGrid');
 
-  const emptyStateContainer = document.getElementById('examEmptyStateContainer');
-  const resetSearchBtn = document.getElementById('emptyStateResetBtn');
-  const searchResultsCountLabel = document.getElementById('searchResultsCountLabel');
+// ============================================================
+// CACHE
+// ============================================================
 
-  // Initialize Category Filter Chips
-  renderCategoryChips();
+let examsCache = [];
 
-  // Initial Render
-  applyFiltersAndRender();
+let examsLoaded = false;
 
-  // Search Bar Handlers
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value;
-      toggleClearButtonVisibility();
-      applyFiltersAndRender();
-    });
-  }
+let examsLoadingPromise = null;
 
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
-      if (searchInput) {
-        searchInput.value = '';
-        searchInput.focus();
-      }
-      searchQuery = '';
-      toggleClearButtonVisibility();
-      applyFiltersAndRender();
-    });
-  }
 
-  if (resetSearchBtn) {
-    resetSearchBtn.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
-      searchQuery = '';
-      currentCategory = 'All';
-      toggleClearButtonVisibility();
-      renderCategoryChips();
-      applyFiltersAndRender();
-    });
-  }
+// ============================================================
+// FIREBASE CHECK
+// ============================================================
 
-  function toggleClearButtonVisibility() {
-    if (clearSearchBtn) {
-      clearSearchBtn.style.display = searchQuery.trim().length > 0 ? 'inline-flex' : 'none';
-    }
-  }
+function ensureFirestore() {
 
-  function renderCategoryChips() {
-    if (!categoryChipsContainer) return;
-    categoryChipsContainer.innerHTML = '';
-
-    CATEGORIES.forEach(cat => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = `exam-cat-chip ${cat === currentCategory ? 'active' : ''}`;
-      chip.textContent = cat;
-      chip.setAttribute('aria-pressed', cat === currentCategory ? 'true' : 'false');
-
-      chip.addEventListener('click', () => {
-        currentCategory = cat;
-        
-        const allChips = categoryChipsContainer.querySelectorAll('.exam-cat-chip');
-        allChips.forEach(c => {
-          c.classList.remove('active');
-          c.setAttribute('aria-pressed', 'false');
-        });
-        chip.classList.add('active');
-        chip.setAttribute('aria-pressed', 'true');
-
-        applyFiltersAndRender();
-      });
-
-      categoryChipsContainer.appendChild(chip);
-    });
-  }
-
-  function applyFiltersAndRender() {
-    const filteredExams = filterExams(currentCategory, searchQuery);
-    const isFilteringActive = searchQuery.trim().length > 0 || currentCategory !== 'All';
-
-    // If no results match search/filter
-    if (filteredExams.length === 0) {
-      if (popularSection) popularSection.style.display = 'none';
-      if (allExamsSection) allExamsSection.style.display = 'none';
-      if (searchResultsCountLabel) searchResultsCountLabel.style.display = 'none';
-      if (emptyStateContainer) emptyStateContainer.style.display = 'flex';
-      return;
+    if (!db) {
+        throw new Error(
+            "RankHub: Firestore database is not initialized."
+        );
     }
 
-    if (emptyStateContainer) emptyStateContainer.style.display = 'none';
+    return db;
+}
 
-    if (searchResultsCountLabel) {
-      if (isFilteringActive) {
-        searchResultsCountLabel.style.display = 'block';
-        searchResultsCountLabel.textContent = `Showing ${filteredExams.length} exam${filteredExams.length === 1 ? '' : 's'} ${currentCategory !== 'All' ? `in ${currentCategory}` : ''} ${searchQuery ? `for "${searchQuery}"` : ''}`;
-      } else {
-        searchResultsCountLabel.style.display = 'none';
-      }
+
+// ============================================================
+// DATE HELPER
+// ============================================================
+
+function getDateValue(value) {
+
+    if (!value) {
+        return 0;
     }
 
-    if (isFilteringActive) {
-      // Filter Active: Display single grid in Popular Section with dynamic title
-      if (allExamsSection) allExamsSection.style.display = 'none';
-      if (popularSection) {
-        popularSection.style.display = 'block';
-        if (popularSectionTitle) {
-          popularSectionTitle.textContent = currentCategory !== 'All' ? `${currentCategory} Exams` : 'Matching Exams';
+    try {
+
+        // Firebase Timestamp
+        if (
+            value &&
+            typeof value.toDate === "function"
+        ) {
+            return value.toDate().getTime();
         }
-        if (popularSectionSub) {
-          popularSectionSub.textContent = `Showing ${filteredExams.length} available examination${filteredExams.length === 1 ? '' : 's'}`;
+
+        // JS Date
+        if (value instanceof Date) {
+            return value.getTime();
         }
-      }
-      renderExamsGrid(popularGrid, filteredExams);
-    } else {
-      // Default View: Popular Exams top row/grid + All Exams grid
-      const popularList = EXAMS_DATA.filter(e => e.isPopular || e.isFeatured).slice(0, 6);
 
-      if (popularSection) {
-        popularSection.style.display = 'block';
-        if (popularSectionTitle) popularSectionTitle.textContent = 'POPULAR EXAMS';
-        if (popularSectionSub) popularSectionSub.textContent = 'सबसे ज्यादा पसंद किए जाने वाले exams';
-        renderExamsGrid(popularGrid, popularList);
-      }
+        // Number timestamp
+        if (typeof value === "number") {
+            return value;
+        }
 
-      if (allExamsSection) {
-        allExamsSection.style.display = 'block';
-        renderExamsGrid(allExamsGrid, EXAMS_DATA);
-      }
+        // String date
+        const date = new Date(value).getTime();
+
+        return Number.isNaN(date)
+            ? 0
+            : date;
+
+    } catch (error) {
+
+        return 0;
+    }
+}
+
+
+// ============================================================
+// NORMALIZE EXAM
+// ============================================================
+
+function normalizeExam(id, data = {}) {
+
+    return {
+
+        // Basic
+        id: id || "",
+
+        name:
+            String(data.name || "").trim(),
+
+        slug:
+            String(data.slug || "").trim(),
+
+        // Category
+        category:
+            String(data.category || "").trim(),
+
+        // Description
+        shortDescription:
+            data.shortDescription || "",
+
+        description:
+            data.description || "",
+
+        // Images
+        logoUrl:
+            data.logoUrl || "",
+
+        bannerUrl:
+            data.bannerUrl || "",
+
+        // Access
+        accessType:
+            data.accessType === "premium"
+                ? "premium"
+                : "free",
+
+        // Status
+        status:
+            data.status || "draft",
+
+        // Ordering
+        displayOrder:
+            Number(
+                data.displayOrder ??
+                data.order ??
+                999999
+            ),
+
+        // Counts
+        subjectCount:
+            Number(data.subjectCount ?? 0),
+
+        questionCount:
+            Number(data.questionCount ?? 0),
+
+        testCount:
+            Number(data.testCount ?? 0),
+
+        // Flags
+        featured:
+            data.featured === true,
+
+        isPopular:
+            data.isPopular === true,
+
+        isUpcoming:
+            data.isUpcoming === true,
+
+        // Dates
+        createdAt:
+            data.createdAt || null,
+
+        updatedAt:
+            data.updatedAt || null,
+
+        // Admin information
+        createdBy:
+            data.createdBy || "",
+
+        updatedBy:
+            data.updatedBy || ""
+
+    };
+}
+
+
+// ============================================================
+// SORT EXAMS
+// ============================================================
+
+function sortExams(exams) {
+
+    return [...exams].sort((a, b) => {
+
+        const orderA =
+            Number(a.displayOrder ?? 999999);
+
+        const orderB =
+            Number(b.displayOrder ?? 999999);
+
+        if (orderA !== orderB) {
+            return orderA - orderB;
+        }
+
+        return (
+            getDateValue(b.createdAt) -
+            getDateValue(a.createdAt)
+        );
+
+    });
+}
+
+
+// ============================================================
+// LOAD PUBLISHED EXAMS
+// ============================================================
+
+export async function loadExams(
+    forceRefresh = false
+) {
+
+    // --------------------------------------------------------
+    // CACHE
+    // --------------------------------------------------------
+
+    if (
+        examsLoaded &&
+        !forceRefresh
+    ) {
+        return [...examsCache];
     }
 
-    attachExamCardListeners();
-  }
 
-  function renderExamsGrid(container, exams) {
-    if (!container) return;
-    container.innerHTML = '';
+    // --------------------------------------------------------
+    // PREVENT DUPLICATE REQUESTS
+    // --------------------------------------------------------
 
-    exams.forEach(exam => {
-      const card = document.createElement('article');
-      card.className = 'exam-discovery-card';
-      card.dataset.id = exam.id;
+    if (
+        examsLoadingPromise &&
+        !forceRefresh
+    ) {
+        return examsLoadingPromise;
+    }
 
-      const mockCount = exam.mockTestCount || '10+ Mock Tests';
-      const qCount = exam.questionCount || '500+ Practice';
-      const pyqYears = exam.pyqYears || '5+ Years PYQ';
 
-      card.innerHTML = `
-        <div class="exam-card-inner">
-          <div class="exam-card-top">
-            <div class="exam-logo-box" style="background-color: ${exam.logoBg || '#FEF2F2'}; color: ${exam.logoColor || '#DC2626'};">
-              <span>${escapeHtml(exam.logoText || exam.name.substring(0, 3))}</span>
-            </div>
-            <span class="exam-cat-badge">${escapeHtml(exam.category)}</span>
-          </div>
+    // --------------------------------------------------------
+    // LOAD
+    // --------------------------------------------------------
 
-          <h3 class="exam-card-title">${escapeHtml(exam.name)}</h3>
-          <p class="exam-card-desc">${escapeHtml(exam.description || exam.fullTitle)}</p>
+    examsLoadingPromise = (async () => {
 
-          <div class="exam-card-meta-list">
-            <span class="meta-item">📝 ${escapeHtml(mockCount)}</span>
-            <span class="meta-item">📚 ${escapeHtml(qCount)}</span>
-            <span class="meta-item">📄 ${escapeHtml(pyqYears)}</span>
-            <span class="meta-item">📖 Notes Available</span>
-          </div>
+        try {
 
-          <div class="exam-card-footer">
-            <span class="btn-explore-link">
-              <span>View Exam</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </span>
-          </div>
-        </div>
-      `;
+            ensureFirestore();
 
-      container.appendChild(card);
-    });
-  }
+            console.log(
+                "RankHub: Loading published exams from Firestore..."
+            );
 
-  function attachExamCardListeners() {
-    const cards = document.querySelectorAll('.exam-discovery-card');
-    cards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        const id = card.dataset.id;
-        if (id) {
-          window.location.href = `./exam-detail.html?id=${id}`;
+
+            const examsRef =
+                collection(db, "exams");
+
+
+            let snapshot;
+
+
+            // =================================================
+            // FIRST TRY:
+            // status + displayOrder
+            // =================================================
+
+            try {
+
+                const examsQuery =
+                    query(
+                        examsRef,
+                        where(
+                            "status",
+                            "==",
+                            "published"
+                        ),
+                        orderBy(
+                            "displayOrder",
+                            "asc"
+                        )
+                    );
+
+
+                snapshot =
+                    await getDocs(
+                        examsQuery
+                    );
+
+
+            } catch (queryError) {
+
+                console.warn(
+                    "RankHub: Ordered exam query failed.",
+                    queryError
+                );
+
+
+                // =================================================
+                // FALLBACK:
+                // ONLY STATUS FILTER
+                // =================================================
+
+                try {
+
+                    const fallbackQuery =
+                        query(
+                            examsRef,
+                            where(
+                                "status",
+                                "==",
+                                "published"
+                            )
+                        );
+
+
+                    snapshot =
+                        await getDocs(
+                            fallbackQuery
+                        );
+
+
+                } catch (fallbackError) {
+
+                    console.warn(
+                        "RankHub: Status query failed. Loading all exams.",
+                        fallbackError
+                    );
+
+
+                    // =================================================
+                    // FINAL FALLBACK:
+                    // LOAD ALL DOCUMENTS
+                    // =================================================
+
+                    snapshot =
+                        await getDocs(
+                            examsRef
+                        );
+
+                }
+
+            }
+
+
+            const exams = [];
+
+
+            // =================================================
+            // CONVERT FIRESTORE DOCUMENTS
+            // =================================================
+
+            snapshot.forEach(
+                (examDoc) => {
+
+                    const data =
+                        examDoc.data() || {};
+
+
+                    const exam =
+                        normalizeExam(
+                            examDoc.id,
+                            data
+                        );
+
+
+                    // ------------------------------------------------
+                    // IMPORTANT
+                    // Final fallback may contain drafts.
+                    // User website must NEVER show drafts.
+                    // ------------------------------------------------
+
+                    if (
+                        exam.status ===
+                        "published"
+                    ) {
+
+                        exams.push(
+                            exam
+                        );
+
+                    }
+
+                }
+            );
+
+
+            // =================================================
+            // SORT
+            // =================================================
+
+            const sortedExams =
+                sortExams(exams);
+
+
+            // =================================================
+            // CACHE
+            // =================================================
+
+            examsCache =
+                sortedExams;
+
+            examsLoaded =
+                true;
+
+
+            console.log(
+                `RankHub: ${sortedExams.length} published exams loaded.`
+            );
+
+
+            return [
+                ...sortedExams
+            ];
+
+
+        } catch (error) {
+
+            console.error(
+                "RankHub: Failed to load exams:",
+                error
+            );
+
+
+            examsCache =
+                [];
+
+            examsLoaded =
+                false;
+
+
+            throw error;
+
+
+        } finally {
+
+            examsLoadingPromise =
+                null;
+
         }
-      });
-    });
-  }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-});
+    })();
+
+
+    return examsLoadingPromise;
+}
+
+
+// ============================================================
+// GET ALL PUBLISHED EXAMS
+// ============================================================
+
+export async function getAllExams() {
+
+    return await loadExams();
+}
+
+
+// ============================================================
+// GET ALL EXAMS INCLUDING DRAFTS
+// ============================================================
+//
+// Useful only for admin/debug purposes.
+// User website should normally use getAllExams().
+// ============================================================
+
+export async function getAllExamsIncludingDrafts() {
+
+    ensureFirestore();
+
+    try {
+
+        const examsRef =
+            collection(
+                db,
+                "exams"
+            );
+
+
+        const snapshot =
+            await getDocs(
+                examsRef
+            );
+
+
+        const exams = [];
+
+
+        snapshot.forEach(
+            (examDoc) => {
+
+                exams.push(
+                    normalizeExam(
+                        examDoc.id,
+                        examDoc.data()
+                    )
+                );
+
+            }
+        );
+
+
+        return sortExams(
+            exams
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "RankHub: Failed to load all exams:",
+            error
+        );
+
+
+        return [];
+
+    }
+}
+
+
+// ============================================================
+// GET EXAM BY ID OR SLUG
+// ============================================================
+
+export async function getExamById(
+    id
+) {
+
+    if (!id) {
+        return null;
+    }
+
+
+    const requestedId =
+        String(id).trim();
+
+
+    if (!requestedId) {
+        return null;
+    }
+
+
+    // =========================================================
+    // CHECK CACHE FIRST
+    // =========================================================
+
+    if (examsLoaded) {
+
+        const cachedExam =
+            examsCache.find(
+                exam =>
+                    exam.id ===
+                        requestedId ||
+
+                    exam.slug ===
+                        requestedId
+            );
+
+
+        if (cachedExam) {
+
+            return cachedExam;
+
+        }
+
+    }
+
+
+    ensureFirestore();
+
+
+    // =========================================================
+    // DIRECT DOCUMENT ID LOOKUP
+    // =========================================================
+
+    try {
+
+        const examRef =
+            doc(
+                db,
+                "exams",
+                requestedId
+            );
+
+
+        const snapshot =
+            await getDoc(
+                examRef
+            );
+
+
+        if (
+            snapshot.exists()
+        ) {
+
+            const exam =
+                normalizeExam(
+                    snapshot.id,
+                    snapshot.data()
+                );
+
+
+            // Never return draft
+            if (
+                exam.status !==
+                "published"
+            ) {
+
+                return null;
+
+            }
+
+
+            return exam;
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "RankHub: Direct exam lookup failed:",
+            error
+        );
+
+    }
+
+
+    // =========================================================
+    // SLUG LOOKUP
+    // =========================================================
+
+    try {
+
+        const examsRef =
+            collection(
+                db,
+                "exams"
+            );
+
+
+        const slugQuery =
+            query(
+                examsRef,
+                where(
+                    "slug",
+                    "==",
+                    requestedId
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(
+                slugQuery
+            );
+
+
+        if (
+            !snapshot.empty
+        ) {
+
+            const examDoc =
+                snapshot.docs[0];
+
+
+            const exam =
+                normalizeExam(
+                    examDoc.id,
+                    examDoc.data()
+                );
+
+
+            if (
+                exam.status !==
+                "published"
+            ) {
+
+                return null;
+
+            }
+
+
+            return exam;
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "RankHub: Slug exam lookup failed:",
+            error
+        );
+
+    }
+
+
+    return null;
+}
+
+
+// ============================================================
+// GET EXAM BY SLUG
+// ============================================================
+
+export async function getExamBySlug(
+    slug
+) {
+
+    if (!slug) {
+        return null;
+    }
+
+    return await getExamById(
+        slug
+    );
+}
+
+
+// ============================================================
+// FILTER EXAMS
+// ============================================================
+
+export async function filterExams(
+    category = "All",
+    searchQuery = ""
+) {
+
+    const exams =
+        await getAllExams();
+
+
+    const selectedCategory =
+        String(
+            category || "All"
+        )
+            .trim();
+
+
+    const search =
+        String(
+            searchQuery || ""
+        )
+            .toLowerCase()
+            .trim();
+
+
+    return exams.filter(
+        (exam) => {
+
+            const matchesCategory =
+                !selectedCategory ||
+                selectedCategory
+                    .toLowerCase() ===
+                    "all" ||
+
+                exam.category
+                    .toLowerCase() ===
+                    selectedCategory
+                        .toLowerCase();
+
+
+            const searchableText =
+                [
+                    exam.name,
+                    exam.slug,
+                    exam.category,
+                    exam.shortDescription,
+                    exam.description
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+
+            const matchesSearch =
+                !search ||
+                searchableText.includes(
+                    search
+                );
+
+
+            return (
+                matchesCategory &&
+                matchesSearch
+            );
+
+        }
+    );
+}
+
+
+// ============================================================
+// SEARCH EXAMS
+// ============================================================
+
+export async function searchExams(
+    searchQuery = ""
+) {
+
+    return await filterExams(
+        "All",
+        searchQuery
+    );
+}
+
+
+// ============================================================
+// GET EXAMS BY CATEGORY
+// ============================================================
+
+export async function getExamsByCategory(
+    category
+) {
+
+    if (
+        !category ||
+        String(category)
+            .toLowerCase() ===
+            "all"
+    ) {
+
+        return await getAllExams();
+
+    }
+
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            String(
+                exam.category
+            )
+                .toLowerCase() ===
+            String(category)
+                .toLowerCase()
+    );
+}
+
+
+// ============================================================
+// FEATURED EXAMS
+// ============================================================
+
+export async function getFeaturedExams() {
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            exam.featured === true
+    );
+}
+
+
+// ============================================================
+// POPULAR EXAMS
+// ============================================================
+
+export async function getPopularExams() {
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            exam.isPopular === true ||
+
+            String(
+                exam.category
+            )
+                .toLowerCase() ===
+            "popular"
+    );
+}
+
+
+// ============================================================
+// UPCOMING EXAMS
+// ============================================================
+
+export async function getUpcomingExams() {
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            exam.isUpcoming === true
+    );
+}
+
+
+// ============================================================
+// FREE EXAMS
+// ============================================================
+
+export async function getFreeExams() {
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            exam.accessType ===
+            "free"
+    );
+}
+
+
+// ============================================================
+// PREMIUM EXAMS
+// ============================================================
+
+export async function getPremiumExams() {
+
+    const exams =
+        await getAllExams();
+
+
+    return exams.filter(
+        exam =>
+            exam.accessType ===
+            "premium"
+    );
+}
+
+
+// ============================================================
+// FIND EXAM
+// ============================================================
+
+export async function findExam(
+    value
+) {
+
+    if (!value) {
+        return null;
+    }
+
+
+    const exams =
+        await getAllExams();
+
+
+    const search =
+        String(value)
+            .toLowerCase()
+            .trim();
+
+
+    return (
+        exams.find(
+            exam =>
+                exam.id
+                    .toLowerCase() ===
+                    search ||
+
+                exam.slug
+                    .toLowerCase() ===
+                    search ||
+
+                exam.name
+                    .toLowerCase() ===
+                    search
+        ) || null
+    );
+}
+
+
+// ============================================================
+// REFRESH EXAMS
+// ============================================================
+
+export async function refreshExams() {
+
+    console.log(
+        "RankHub: Refreshing exams..."
+    );
+
+
+    examsCache =
+        [];
+
+    examsLoaded =
+        false;
+
+    examsLoadingPromise =
+        null;
+
+
+    return await loadExams(
+        true
+    );
+}
+
+
+// ============================================================
+// CLEAR CACHE
+// ============================================================
+
+export function clearExamCache() {
+
+    console.log(
+        "RankHub: Clearing exam cache..."
+    );
+
+
+    examsCache =
+        [];
+
+    examsLoaded =
+        false;
+
+    examsLoadingPromise =
+        null;
+}
+
+
+// ============================================================
+// CHECK IF EXAM EXISTS
+// ============================================================
+
+export async function examExists(
+    value
+) {
+
+    const exam =
+        await findExam(
+            value
+        );
+
+
+    return !!exam;
+}
+
+
+// ============================================================
+// GET EXAM STORE STATUS
+// ============================================================
+
+export function getExamStoreStatus() {
+
+    return {
+
+        loaded:
+            examsLoaded,
+
+        loading:
+            !!examsLoadingPromise,
+
+        count:
+            examsCache.length,
+
+        exams:
+            [...examsCache]
+
+    };
+}
+
+
+// ============================================================
+// DEBUG FIRESTORE
+// ============================================================
+
+export async function debugExams() {
+
+    try {
+
+        ensureFirestore();
+
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            "RANKHUB EXAM DEBUG"
+        );
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            "Firestore DB:",
+            db
+        );
+
+
+        const examsRef =
+            collection(
+                db,
+                "exams"
+            );
+
+
+        const snapshot =
+            await getDocs(
+                examsRef
+            );
+
+
+        console.log(
+            "Total Firestore exam documents:",
+            snapshot.size
+        );
+
+
+        snapshot.forEach(
+            (examDoc) => {
+
+                console.log(
+                    "Exam:",
+                    examDoc.id,
+                    examDoc.data()
+                );
+
+            }
+        );
+
+
+        console.log(
+            "===================================="
+        );
+
+
+        return snapshot.size;
+
+
+    } catch (error) {
+
+        console.error(
+            "RankHub exam debug failed:",
+            error
+        );
+
+
+        return 0;
+
+    }
+}
+
+
+// ============================================================
+// INITIAL LOAD
+// ============================================================
+//
+// This loads exams automatically when this module is imported.
+// If the page needs a custom loading flow, simply ignore this
+// and call getAllExams() manually.
+// ============================================================
+
+loadExams()
+    .then(
+        (exams) => {
+
+            console.log(
+                `RankHub: Exam store ready. ${exams.length} exams available.`
+            );
+
+        }
+    )
+    .catch(
+        (error) => {
+
+            console.warn(
+                "RankHub: Initial exam store load failed:",
+                error
+            );
+
+        }
+    );
+
+
+// ============================================================
+// GLOBAL DEBUG HELPERS
+// ============================================================
+//
+// Browser console:
+//   await window.RankHubExams.refresh()
+//   await window.RankHubExams.debug()
+//   window.RankHubExams.status()
+// ============================================================
+
+if (
+    typeof window !==
+    "undefined"
+) {
+
+    window.RankHubExams = {
+
+        getAll:
+            getAllExams,
+
+        getById:
+            getExamById,
+
+        getBySlug:
+            getExamBySlug,
+
+        search:
+            searchExams,
+
+        filter:
+            filterExams,
+
+        refresh:
+            refreshExams,
+
+        clearCache:
+            clearExamCache,
+
+        status:
+            getExamStoreStatus,
+
+        debug:
+            debugExams
+
+    };
+
+}
